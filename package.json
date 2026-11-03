@@ -1,0 +1,10 @@
+{"name": "phuoc-vinh-3d-server",
+"version": "1.0.0",
+"description": "Game Data Server Phước Vinh 3D",
+"main": "JavaScript/GameDataServer.js",
+"scripts": {"start": "node JavaScript/GameDataServer.js","dev": "nodemon JavaScript/GameDataServer.js","test": "echo \"Error: no test specified\" && exit 1"},
+"keywords": ["game","server","websocket","usb","bluetooth","phuoc-vinh"],
+"author": "Phước Vinh Game Team",
+"license": "MIT",
+"dependencies": {"express": "^4.18.2","ws": "^8.13.0","cors": "^2.8.5","serialport": "^9.2.8","@serialport/parser-readline": "^9.2.8"},
+"devDependencies": {"nodemon": "^3.0.1"}}

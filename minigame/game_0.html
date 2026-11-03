@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="website-name" content="Phước Vinh 3D [https://hethongbaocaocongkhai.netlify.app/Game.html]">
+    <meta name="author" content="Thiên">
+    <meta name="developer" content="AI: Chat GTP, Gemini, Claude">
+    <meta name="development-tool" content="A Code,Code Studio">
+    <meta name="planning-date" content="2026-07-11">
+    <meta name="location" content="Phước Vinh, Tây Ninh, Việt Nam">
+    <meta name="project-version" content="BETA 1.0.2">
+    <meta name="project-status" content="Not yet completed">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Phước Vinh 3D</title>
+<style>
+    html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        background: #87ceeb; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    canvas { display: block; }
+    
+    /* UI Overlay */
+    #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+    #crosshair {
+        position: absolute; top: 50%; left: 50%;
+        width: 8px; height: 8px; background: rgba(255,255,255,0.9);
+        border: 1px solid #000; border-radius: 50%; transform: translate(-50%, -50%);
+        pointer-events: none; display: none;
+    }
+    
+    /* HUD Nâng Cấp */
+    #hud {
+        position: absolute; top: 20px; right: 20px; padding: 15px 25px;
+        background: rgba(0,0,0,0.85); color: #fff; border-radius: 10px;
+        border: 2px solid #ffeb3b; font-size: 15px; font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: none; z-index: 100;
+        min-width: 220px;
+    }
+    .hud-item { margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .hud-val { color: #4caf50; }
+    .hud-val-money { color: #ffeb3b; }
+    .hud-val-red { color: #ff5722; }
+
+    #loading {
+        position: absolute; top: 20px; left: 20px; padding: 15px 25px;
+        background: rgba(0,0,0,0.8); color: #fff; border-radius: 8px; z-index: 100;
+    }
+    #loading h3 { margin: 0 0 8px 0; color: #4caf50; }
+    
+    /* Menus */
+    #deviceSelect {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.9); z-index: 999; pointer-events: auto;
+    }
+    #deviceBox {
+        background: #1e1e1e; padding: 30px; border-radius: 12px; width: 360px; text-align: center;
+        color: white; border: 1px solid #444;
+    }
+    #deviceBox h2 { margin-top: 0; color: #ffeb3b; }
+    #deviceBox p { color: #ccc; margin-bottom: 20px; font-size: 13px; text-align: left; line-height: 1.5; }
+    .btn {
+        width: 100%; padding: 14px; margin-top: 12px; border: none; border-radius: 8px;
+        cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s;
+    }
+    .desktop { background: #4caf50; color: white; }
+    .mobile { background: #2196f3; color: white; }
+    
+    /* Controls */
+    #joystick-zone {
+        position: absolute; bottom: 30px; left: 30px; width: 140px; height: 140px;
+        background: rgba(255,255,255,0.1); border-radius: 50%;
+        display: none; pointer-events: auto; border: 2px solid rgba(255,255,255,0.3);
+    }
+    #stick {
+        position: absolute; left: 45px; top: 45px; width: 50px; height: 50px;
+        border-radius: 50%; background: rgba(255,255,255,0.6);
+    }
+    #look-zone {
+        position: absolute; top: 0; right: 0; width: 50%; height: 100%;
+        display: none; pointer-events: auto; touch-action: none;
+    }
+    #interactBtn {
+        position: absolute; bottom: 40px; right: 40px; width: 85px; height: 85px;
+        background: rgba(255, 152, 0, 0.95); color: white; border-radius: 50%;
+        border: 3px solid #fff; font-size: 13px; font-weight: bold; display: none;
+        pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 50;
+    }
+    #attackBtn {
+        position: absolute; bottom: 140px; right: 40px; width: 70px; height: 70px;
+        background: rgba(244, 67, 54, 0.95); color: white; border-radius: 50%;
+        border: 2px solid #fff; font-size: 12px; font-weight: bold; display: none;
+        pointer-events: auto; z-index: 50;
+    }
+    #plantBtn {
+        position: absolute; bottom: 240px; right: 40px; width: 70px; height: 70px;
+        background: rgba(76, 175, 80, 0.95); color: white; border-radius: 50%;
+        border: 2px solid #fff; font-size: 12px; font-weight: bold; display: none;
+        pointer-events: auto; z-index: 50;
+    }
+    #prostrateBtn {
+        position: absolute; bottom: 340px; right: 40px; width: 70px; height: 70px;
+        background: rgba(103, 58, 183, 0.95); color: white; border-radius: 50%;
+        border: 2px solid #9c4dcc; font-size: 11px; font-weight: bold; display: none;
+        pointer-events: auto; z-index: 50; line-height: 1.3;
+    }
+    /* ===== NIGHTMARCHERS UI ===== */
+    #nmOverlay {
+        position: absolute; inset: 0; z-index: 8900; pointer-events: none;
+        background: radial-gradient(ellipse at center, transparent 30%, rgba(30,0,60,0.85) 100%);
+        display: none; transition: opacity 0.5s;
+    }
+    #nmWarnText {
+        position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+        color: #ff4500; font-size: 20px; font-weight: bold;
+        text-shadow: 0 0 20px #ff6600, 0 0 40px #ff3300, 2px 2px 0 #000;
+        text-align: center; pointer-events: none; display: none; z-index: 8901;
+        line-height: 1.9; max-width: 90%;
+        animation: nmFlicker 1.5s infinite;
+    }
+    #nmJumpscare {
+        position: absolute; inset: 0; background: rgba(70,0,110,0.6);
+        display: none; z-index: 9998; pointer-events: none;
+        align-items: center; justify-content: center; color: white;
+        font-size: 62px; font-weight: bold; text-shadow: 5px 5px 0 #000, 0 0 30px #aa00ff;
+        flex-direction: column; gap: 12px;
+    }
+    @keyframes nmFlicker {
+        0%, 100% { opacity: 1; } 45% { opacity: 0.7; } 50% { opacity: 1; } 75% { opacity: 0.85; }
+    }
+    
+    #instructions {
+        position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+        color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px;
+        font-size: 13px; display: none; pointer-events: none; text-align: center;
+    }
+
+    #actionText {
+        position: absolute; top: 55%; left: 50%; transform: translateX(-50%);
+        color: #fff; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 2px #000;
+        background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 6px;
+        display: none; pointer-events: none; z-index: 20; text-align: center; max-width: 80%;
+    }
+    #jumpscare {
+        position: absolute; inset: 0; background: rgba(255,0,0,0.4);
+        display: none; z-index: 9999; pointer-events: none;
+        align-items: center; justify-content: center; color: white;
+        font-size: 80px; font-weight: bold; text-shadow: 5px 5px 0 #000;
+    }
+        /* Debug Panel */
+    #debugPanel {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #00ff00;
+        font-family: monospace;
+        font-size: 14px;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid #00ff00;
+        z-index: 9999;
+        pointer-events: none;
+        display: none; 
+    }
+    .debug-item { margin-bottom: 5px; }
+    .debug-label { color: #fff; font-weight: bold; }
+    .checkbox-container {
+        display: block;
+        margin: 15px 0;
+        color: #4caf50;
+        font-size: 14px;
+        cursor: pointer;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+
+<audio id="bgMusic" src="background_music-game.ogg" loop preload="auto"></audio>
+
+<div id="loading">
+    <h3>Phước Vinh 3D</h3>
+    <div id="loadText">Đang đồng bộ bản đồ...</div>
+</div>
+
+<div id="jumpscare">ÔNG BA ĐỒNG!!</div>
+<div id="nmJumpscare">👁️ HUAKA'I PŌ!<br><span style="font-size:28px;color:#ffcc00">ĐOÀN LINH HỒN ĐÃ NHÌN THẤY BẠN!</span></div>
+<div id="nmOverlay"></div>
+<div id="nmWarnText"></div>
+<!-- Bảng thông số kỹ thuật -->
+<div id="debugPanel">
+    <div class="debug-item"><span class="debug-label">Trạng thái:</span> <span id="debugStatus">Khởi tạo...</span></div>
+    <div class="debug-item"><span class="debug-label">FPS:</span> <span id="debugFPS">0</span></div>
+    <div class="debug-item"><span class="debug-label">Tọa độ:</span> <span id="debugCoords">X: 0.00 | Y: 0.00 | Z: 0.00</span></div>
+</div>
+
+<div id="hud">
+    <div class="hud-item"><span>🌾 Hạt giống / Lúa:</span> <span class="hud-val"><span id="seedCount">5</span> / <span id="riceCount">0</span> kg</span></div>
+    <div class="hud-item"><span>🐟 Cá:</span> <span class="hud-val" id="fishCount">0</span>con</div>
+    <div class="hud-item"><span>🍜 Mì gói:</span> <span class="hud-val" id="noodleCount">0</span> gói</div>
+    <div class="hud-item"><span>📺 Đồ gia dụng:</span> <span class="hud-val" id="applianceCount">0</span> món</div>
+    <div class="hud-item"><span>💵 Tiền:</span> <span class="hud-val-money"><span id="moneyCount">100000</span> đ</span></div>
+    <div class="hud-item"><span>📉 Nợ chủ nợ:</span> <span class="hud-val-red"><span id="debtCount">20000000</span> ₫</span></div>
+    <div class="hud-item"><span>📊 Lạm phát:</span> <span class="hud-val-red" id="inflationText">100%</span></div>
+    <div class="hud-item"><span>📅 Ngày:</span> <span style="color: #00ffff;" id="dayText">1</span></div>
+    <div class="hud-item"><span>🕐 Thời điểm:</span> <span style="color:#ffd54f;" id="dayPhaseText">☀️ Ban ngày</span></div>
+</div>
+
+<div id="deviceSelect">
+    <div id="deviceBox">
+        <h2>Phước Vinh 3D</h2>
+      <p>Ừm nó chỉ là game bình thường</p>
+         <label class="checkbox-container">
+<input type="checkbox" id="showDebugToggle"> Bật thông số kỹ thuật (FPS, Tọa độ)
+</label>
+        <button id="desktopBtn" class="btn desktop">Chơi Máy tính (Phím/Chuột/F)</button>
+        <button id="mobileBtn" class="btn mobile">Chơi Điện thoại</button>
+    </div>
+</div>
+
+<div id="ui-layer">
+    <div id="crosshair"></div>
+    <div id="instructions">WASD: Đi | E: Tương tác | F: Đánh/Bom nợ | P: Gieo hạt (đồng lúa) | <span style="color:#cc88ff">G: Phủ phục trước Nightmarchers (ban đêm)</span></div>
+    <div id="actionText">Nhấn E để nói chuyện</div>
+</div>
+
+<div id="joystick-zone"><div id="stick"></div></div>
+<div id="look-zone"></div>
+<button id="interactBtn">Tương tác (E)</button>
+<button id="attackBtn">Đánh (F)</button>
+<button id="plantBtn">Gieo (P)</button>
+<button id="prostrateBtn">🙏 Phủ<br>Phục (G)</button>
+
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js";
+
+// --- CẤU HÌNH HỆ THỐNG ---
+const CONFIG = {
+    speed: 0.4,
+    lookSpeedDesktop: 0.0012,
+    lookSpeedMobile: 0.0035,
+    playerHeight: 4,
+    mapLimit: 365
+};
+// Dữ liệu người chơi & Kinh tế
+const inventory = { 
+    seeds: 5, rice: 20, fish: 15, noodles: 24, appliances: 5,
+    money: 1000000, debt: 20000000
+};
+
+let economy = {
+    day: 1,
+    inflation: 1.0, // 100%
+    basePrice: { seed: 5000, rice: 15000, fish: 30000, noodle: 7000, appliance: 120000 },
+    currentPrice: {}
+};
+
+let interactables = [];
+// --- BIẾN DEBUG ---
+let showDebug = false;
+let frameCount = 0;
+let lastFpsTime = performance.now();
+const debugPanel = document.getElementById("debugPanel");
+const debugStatus = document.getElementById("debugStatus");
+const debugFPS = document.getElementById("debugFPS");
+const debugCoords = document.getElementById("debugCoords");
+
+let colliderBoxes = [];
+let policeNPCs = [];
+let journalists = [];
+let targetNPC = null; // NPC đang lọt vào tầm ngắm
+let decorWalkers = []; // NPC nền đi lòng vòng, không tương tác được
+let decorVehicles = []; // Xe cộ chạy trên đường, không tương tác được
+
+let scene, camera, renderer;
+let selectedDevice = null;
+let pitch = 0, yaw = Math.PI;
+
+// Trạng thái điều khiển
+let moveF = false, moveB = false, moveL = false, moveR = false;
+let joyX = 0, joyY = 0;
+let lookTouchId = null, lastLookX = 0, lastLookY = 0;
+
+// Hệ thống Pháp lý / Tội phạm
+let crimeAlert = false;
+let copSpeed = 0.45;
+
+// Thực thể quái vật
+let baDongNPC = null;
+let baDongAngle = 0;
+
+const NM_COUNT = 7;
+const nightmarchers = [];   // Mảng mesh từng linh hồn
+let nmGroup = null;         // THREE.Group chứa đoàn
+let nmProgress = 0;         // 0→1 vị trí trên trục hành quân
+let nmDir = 1;              // 1 = Tây→Đông, -1 = Đông→Tây
+let nmActive = false;       // Chỉ hiển thị ban đêm
+let isProstratingBeforeMarchers = false; // Người chơi đang phủ phục (G)
+let nmTorches = [];         // [{light, marcherRef}] – đèn đuốc PointLight
+let nmAlertShown = false;   // Cờ cảnh báo đã hiện chưa
+let nmJumpActive = false;   // Cờ jumpscare đang chạy
+let nmAudioCtx = null;      // AudioContext trống
+let nmDrumTimeout = null;   // setTimeout trống trống
+let nmLastPenaltyTime = 0;  // Tránh phạt liên tục
+// Đường hành quân: chạy ngang qua phần Nam bản đồ (xa chợ, qua cánh đồng)
+const NM_PATH_Z  = -45;
+const NM_X_START = -310;
+const NM_X_END   =  310;
+const NM_SPEED   = 0.00013; // ≈ 2 phút một chiều, 4 phút/khứ hồi
+const NM_WARN_DIST   = 62;  // Bắt đầu hiện cảnh báo + tiếng trống
+const NM_DANGER_DIST = 19;  // Vào vùng nguy hiểm: cần phủ phục
+
+const uiCrosshair = document.getElementById("crosshair");
+const uiInstruct = document.getElementById("instructions");
+const uiAction = document.getElementById("actionText");
+const hud = document.getElementById("hud");
+const btnInteract = document.getElementById("interactBtn");
+const btnAttack = document.getElementById("attackBtn");
+const btnPlant = document.getElementById("plantBtn");
+const btnProstate = document.getElementById("prostrateBtn");
+
+document.getElementById("desktopBtn").onclick = () => startGame("desktop");
+document.getElementById("mobileBtn").onclick = () => startGame("mobile");
+
+function startGame(device) {
+    selectedDevice = device;
+    document.getElementById("deviceSelect").style.display = "none";
+    hud.style.display = "block";
+    updatePrices();
+    showDebug = document.getElementById("showDebugToggle").checked;
+    if (showDebug) {
+        debugPanel.style.display = "block";
+        debugStatus.innerText = "Đang chơi (" + (device === "desktop" ? "PC" : "Mobile") + ")";
+    }
+
+    // Bật nhạc nền
+    const bgMusic = document.getElementById("bgMusic");
+    bgMusic.volume = 0.45;
+    bgMusic.play().catch(() => {});
+    
+    if (device === "desktop") {
+        uiCrosshair.style.display = "block";
+        uiInstruct.style.display = "block";
+        setupDesktopControls();
+    } else {
+        uiCrosshair.style.display = "block";
+        document.getElementById("joystick-zone").style.display = "block";
+        document.getElementById("look-zone").style.display = "block";
+        btnInteract.style.display = "block";
+        btnAttack.style.display = "block";
+        btnPlant.style.display = "block";
+        btnProstate.style.display = "block";
+        setupMobileControls();
+    }
+    initThreeJS();
+    // Vòng lặp thời gian kinh tế: 
+    setInterval(nextEconomicDay, 600000);
+}
+
+function updatePrices() {
+    for (let key in economy.basePrice) {
+        let fluctuation = 0.8 + Math.random() * 0.5; // Biến động ngẫu nhiên 80% - 130%
+        economy.currentPrice[key] = Math.round(economy.basePrice[key] * fluctuation * economy.inflation);
+    }
+    document.getElementById("inflationText").innerText = Math.round(economy.inflation * 100) + "%";
+    document.getElementById("dayText").innerText = economy.day;
+    document.getElementById("seedCount").innerText = inventory.seeds;
+    document.getElementById("riceCount").innerText = inventory.rice;
+    document.getElementById("fishCount").innerText = inventory.fish;
+    document.getElementById("noodleCount").innerText = inventory.noodles;
+    document.getElementById("applianceCount").innerText = inventory.appliances;
+    document.getElementById("moneyCount").innerText = inventory.money.toLocaleString();
+    document.getElementById("debtCount").innerText = inventory.debt.toLocaleString();
+}
+
+function nextEconomicDay() {
+    economy.day++;
+    economy.inflation += 0.05; // Lạm phát tự nhiên tăng 5% mỗi ngày
+    updatePrices();
+    showActionText(`📅 Bước sang ngày thứ ${economy.day}! Giá cả thị trường đã biến động.`);
+    checkGovtFoodAid();
+}
+function updateDebugInfo() {
+    if (!showDebug) return;
+    frameCount++;
+    const now = performance.now();
+    if (now - lastFpsTime >= 1000) {
+        debugFPS.innerText = frameCount;
+        frameCount = 0;
+        lastFpsTime = now;
+        if (parseInt(debugFPS.innerText) < 24) {
+            debugFPS.style.color = "red";
+        } else {
+            debugFPS.style.color = "#00ff00";
+        }
+    }
+    if (camera) {
+        const x = camera.position.x.toFixed(2);
+        const y = camera.position.y.toFixed(2);
+        const z = camera.position.z.toFixed(2);
+        debugCoords.innerText = `X: ${x} | Y: ${y} | Z: ${z}`;
+    }
+}
+function triggerHyperInflation() {
+    economy.inflation += 0.8; // Tăng vọt 80% lạm phát
+    crimeAlert = true;
+    updatePrices();
+    showActionText("⚠️ BẠN GÂY RA KHỦNG HOẢNG LẠM PHÁT VÀ BỊ CÔNG AN TRUY NÃ!");
+    checkGovtFoodAid();
+}
+
+// --- CHÍNH SÁCH CỨU TRỢ CỦA CHÍNH PHỦ KHI LẠM PHÁT QUÁ CAO ---
+let govtAidLastDay = -999;
+const GOVT_AID_INFLATION_THRESHOLD = 3.0; // siêu lạm phát trở lên
+function checkGovtFoodAid() {
+    if(economy.inflation >= GOVT_AID_INFLATION_THRESHOLD && (economy.day - govtAidLastDay) >= 3) {
+        govtAidLastDay = economy.day;
+        inventory.noodles += 5;
+        inventory.rice += 3;
+        updatePrices();
+        setTimeout(() => {
+            showActionText("📦 CHÍNH PHỦ HỖ TRỢ: Lạm phát tăng quá cao, phát lương thực cứu trợ dân nghèo! +5 mì gói, +3kg lúa.");
+        }, 4200);
+    }
+}
+
+function initThreeJS() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x95c8e2);
+    scene.fog = new THREE.FogExp2(0x95c8e2, 0.003);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // Xuất phát từ trục giao lộ trung tâm
+    camera.position.set(0, CONFIG.playerHeight, 80);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    scene.add(ambientLight);
+    const sunLight = new THREE.DirectionalLight(0xfffaee, 1.1);
+    sunLight.position.set(120, 180, 90);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
+
+    buildSatelliteLayout();
+    buildInteractiveEntities();
+    buildMarketAmbience();
+    buildDecorativeNPCs();
+    buildDayNightSystem();
+    buildFootballKids();
+    buildFishingPond();
+    buildNightmarchers();
+
+    document.getElementById("loading").style.display = "none";
+    window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    animate();
+}
+
+function createSignTexture(text, bgColor, textColor, subtext="") {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = bgColor; ctx.fillRect(0,0,512,128);
+    ctx.fillStyle = textColor; 
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 44px Arial';
+    ctx.fillText(text, 256, 50);
+    if(subtext) {
+        ctx.font = 'bold 18px Arial';
+        ctx.fillText(subtext, 256, 100);
+    }
+    return new THREE.CanvasTexture(canvas);
+}
+
+function addBoxCollider(x, y, z, w, h, d) {
+    const box = new THREE.Box3(
+        new THREE.Vector3(x - w/2, y - h/2, z - d/2),
+        new THREE.Vector3(x + w/2, y + h/2, z + d/2)
+    );
+    colliderBoxes.push(box);
+}
+
+// --- KHÔNG GIAN BẢN ĐỒ---
+function buildSatelliteLayout() {
+    // Mặt nền cỏ tổng thể địa phương
+    const terrain = new THREE.Mesh(
+        new THREE.PlaneGeometry(800, 800),
+        new THREE.MeshStandardMaterial({ color: 0x557a46, roughness: 1 })
+    );
+    terrain.rotation.x = -Math.PI / 2;
+    terrain.receiveShadow = true;
+    scene.add(terrain);
+
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.8 });
+
+    // 1. Trục đường chính nằm ngang (Đi ngang qua BHX và tiệm tóc)
+    const mainHorizontalRoad = new THREE.Mesh(new THREE.BoxGeometry(600, 0.2, 16), roadMat);
+    mainHorizontalRoad.position.set(0, 0.1, 20);
+    scene.add(mainHorizontalRoad);
+
+    // 2. Các nhánh đường dọc chạy xuống phía Nam
+    const westVerticalRoad = new THREE.Mesh(new THREE.BoxGeometry(14, 0.2, 400), roadMat);
+    westVerticalRoad.position.set(-70, 0.1, -100); // Chạy qua xưởng hạt điều
+    scene.add(westVerticalRoad);
+
+    const centerVerticalRoad = new THREE.Mesh(new THREE.BoxGeometry(14, 0.2, 300), roadMat);
+    centerVerticalRoad.position.set(25, 0.1, -50); 
+    scene.add(centerVerticalRoad);
+
+    // 3. Đường cong rẽ vào Chợ Phước Vinh ở phía Bắc
+    const marketRoad = new THREE.Mesh(new THREE.BoxGeometry(12, 0.2, 120), roadMat);
+    marketRoad.position.set(45, 0.1, 80);
+    scene.add(marketRoad);
+
+    // --- DỰNG CÁC KIẾN TRÚC THEO VỊ TRÍ---
+
+    // A. Siêu thị Bách Hóa XANH Ấp Phước Lợi (Nằm phía Tây trục ngang)
+    const bhx = new THREE.Mesh(new THREE.BoxGeometry(45, 12, 25), new THREE.MeshStandardMaterial({ color: 0x006837 }));
+    bhx.position.set(-65, 6, 45); bhx.castShadow = true; scene.add(bhx);
+    addBoxCollider(-65, 6, 45, 45, 12, 25);
+    const texBHX = createSignTexture("BÁCH HÓA XANH", "#006837", "#fff", "Ấp Phước Lợi - Tiện ích cho mọi nhà");
+    const signBHX = new THREE.Mesh(new THREE.PlaneGeometry(35, 7), new THREE.MeshBasicMaterial({map: texBHX}));
+    signBHX.position.set(-65, 11, 57.6); scene.add(signBHX);
+
+    // B. Chợ Phước Vinh (Khu vực nhà lồng to lớn phía Đông Bắc)
+    const marketMat = new THREE.MeshStandardMaterial({ color: 0xdcdcdc });
+    const marketBuilding = new THREE.Mesh(new THREE.BoxGeometry(70, 14, 45), marketMat);
+    marketBuilding.position.set(70, 7, 110); marketBuilding.castShadow = true; scene.add(marketBuilding);
+    addBoxCollider(70, 7, 110, 70, 14, 45);
+    const texMarket = createSignTexture("CHỢ PHƯỚC VINH", "#d32f2f", "#fff", "Tổ 8 Phước Lợi Phước Vinh CT-TN");
+    const signMarket = new THREE.Mesh(new THREE.PlaneGeometry(40, 8), new THREE.MeshBasicMaterial({map: texMarket}));
+    signMarket.position.set(70, 15, 87.4); signMarket.rotation.y = Math.PI; scene.add(signMarket);
+
+    // Sạp chợ phụ bao quanh bằng dù xanh
+    for(let i=0; i<12; i++) {
+        let rx = 40 + (i % 4) * 15;
+        let rz = 70 + Math.floor(i / 4) * 12;
+        let stall = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 4), new THREE.MeshStandardMaterial({color:0x8b5a2b}));
+        stall.position.set(rx, 1, rz); scene.add(stall);
+        addBoxCollider(rx, 1, rz, 4, 2, 4);
+    }
+
+    // C. Tiệm Tóc Kiều My (Đối diện ngã rẽ lối vào trung tâm)
+    const salon = new THREE.Mesh(new THREE.BoxGeometry(18, 9, 16), new THREE.MeshStandardMaterial({ color: 0xffc0cb }));
+    salon.position.set(50, 4.5, 5); salon.castShadow = true; scene.add(salon);
+    addBoxCollider(50, 4.5, 5, 18, 9, 16);
+    const texSalon = createSignTexture("TIỆM TÓC KIỀU MY", "#ff1493", "#fff", "Uốn - Duỗi - Nhuộm Thời Trang");
+    const signSalon = new THREE.Mesh(new THREE.PlaneGeometry(16, 4.5), new THREE.MeshBasicMaterial({map: texSalon}));
+    signSalon.position.set(50, 8, 13.1); scene.add(signSalon);
+
+    // D. Cơ sở gia công tách lụa hạt điều (Nằm sâu phía Nam trục đường Tây)
+    const cashewFactory = new THREE.Mesh(new THREE.BoxGeometry(60, 16, 40), new THREE.MeshStandardMaterial({ color: 0xb0c4de }));
+    cashewFactory.position.set(-110, 8, -80); cashewFactory.castShadow = true; scene.add(cashewFactory);
+    addBoxCollider(-110, 8, -80, 60, 16, 40);
+    const texCashew = createSignTexture("XƯỞNG HẠT ĐIỀU", "#2f4f4f", "#e0ffff", "Cơ sở tách lụa kinh tế nghèo");
+    const signCashew = new THREE.Mesh(new THREE.PlaneGeometry(45, 8), new THREE.MeshBasicMaterial({map: texCashew}));
+    signCashew.position.set(-79.9, 12, -80); signCashew.rotation.y = Math.PI / 2; scene.add(signCashew);
+
+    // E. Hệ thống nhà dân phân bố dọc các tuyến đường (Tạo khu dân cư sinh động)
+    const houseGeo = new THREE.BoxGeometry(14, 8, 14);
+    const houseMat = new THREE.MeshStandardMaterial({ color: 0xf5f5dc });
+    for (let i = 0; i < 15; i++) {
+        let hMesh = new THREE.Mesh(houseGeo, houseMat);
+        let hz = -120 + i * 22;
+        let hx = (i % 2 === 0) ? -45 : -95;
+        if(hz > 150 || (hz > -20 && hz < 50)) continue; // Chừa không gian nút thắt
+        hMesh.position.set(hx, 4, hz);
+        hMesh.castShadow = true; scene.add(hMesh);
+        addBoxCollider(hx, 4, hz, 14, 8, 14);
+    }
+
+    // Khu đồng lúa vàng sinh tồn
+    const fieldMat = new THREE.MeshStandardMaterial({ color: 0xe3a857, roughness: 0.9 });
+    const farmField = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), fieldMat);
+    farmField.rotation.x = -Math.PI/2; farmField.position.set(150, 0.15, -60);
+    scene.add(farmField);
+}
+
+// --- KHỞI TẠO CÁC NPC PHÂN VAI TRÒ TƯƠNG TÁC ---
+function buildInteractiveEntities() {
+    const headGeo = new THREE.SphereGeometry(0.6, 16, 16);
+    const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.2);
+
+    function spawnNPC(x, z, color, type, label, extra = {}) {
+        const group = new THREE.Group();
+        const bMesh = new THREE.Mesh(bodyGeo, new THREE.MeshStandardMaterial({ color: color }));
+        bMesh.position.y = 1.1; bMesh.castShadow = true;
+        const hMesh = new THREE.Mesh(headGeo, new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+        hMesh.position.y = 2.6; hMesh.castShadow = true;
+        group.add(bMesh, hMesh);
+
+        // Phụ kiện nón lá cho nông dân/thương lái vùng biên giới
+        if(extra.hat) {
+            const hat = new THREE.Mesh(new THREE.ConeGeometry(1.1, 0.6, 16), new THREE.MeshStandardMaterial({color: 0xe5c158}));
+            hat.position.y = 3.1; group.add(hat);
+        }
+
+        group.position.set(x, 0, z);
+        group.userData = { type: type, label: label, data: extra };
+        scene.add(group);
+        interactables.push(group);
+        return group;
+    }
+
+    // 1. NPC Bán Hạt Giống (Khu vực chợ)
+    spawnNPC(40, 75, 0x4caf50, 'seed_seller', 'Người bán hạt giống', {hat: true});
+    // 2. NPC Mua Cá (Cạnh sạp chợ)
+    spawnNPC(55, 85, 0x00bcd4, 'fish_buyer', 'Thương lái thu mua cá');
+    // 3. NPC Chủ nợ của người chơi (Đứng canh ngay đầu ngã rẽ vào nhà)
+    spawnNPC(15, 10, 0xe91e63, 'creditor', 'Chủ nợ Tám Đen');
+    // 4. NPC Bảo (Hay nói đùa khẳng định bản dạng)
+    spawnNPC(30, 26, 0x9c27b0, 'bao_gay', 'Bảo Gay');
+    // 5. NPC Nhân viên Bách Hóa Xanh (Đứng ngoài cửa, trước bảng hiệu)
+    spawnNPC(-65, 62, 0xffeb3b, 'bhx_worker', 'Nhân viên Bách Hóa');
+    // 6. NPC Chủ tiệm tóc Kiều My (Đứng ngoài trước cửa tiệm)
+    spawnNPC(50, 17, 0xff4081, 'hair_salon', 'Chị Kiều My');
+    // 7. NPC Xưởng hạt điều (Đứng ngoài trước cổng xưởng)
+    spawnNPC(-74, -80, 0x795548, 'cashew_worker', 'Thợ xưởng điều');
+    // 8. NPC Ông Tư Đô kể chuyện xưa
+    spawnNPC(-45, 10, 0xff9800, 'tu_do', 'Ông Tư Đô', {hat: true});
+    // 9. NPC Bán đồ gia dụng (Đứng ngoài trước cửa hàng)
+    spawnNPC(80, 83, 0x607d8b, 'appliance_seller', 'Cửa hàng gia dụng');
+    // 10. NPC Ông Bảy - Thu mua lúa ngoài đồng, gần lối vào cánh đồng
+    spawnNPC(105, -25, 0x8bc34a, 'rice_buyer', 'Ông Bảy', {hat: true});
+    // NPC Nhà Ngoại Cảm (Đọc suy nghĩ)
+    let mindReaderNPC = spawnNPC(-60.33, 5.65, 0x8e44ad, 'mind_reader', 'Thầy Đồng');
+    mindReaderNPC.position.set(-60.33, 4.0, 5.65);
+
+    // 10. Quái vật Ông Ba Đồng hù người chơi (Khởi tạo mô hình đen tối huyền bí)
+    baDongNPC = new THREE.Group();
+    const bdBody = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.8, 3), new THREE.MeshBasicMaterial({color: 0x111111}));
+    bdBody.position.y = 1.5;
+    const bdHead = new THREE.Mesh(new THREE.SphereGeometry(0.7), new THREE.MeshBasicMaterial({color: 0xaa0000}));
+    bdHead.position.y = 3.2;
+    baDongNPC.add(bdBody, bdHead);
+    baDongNPC.position.set(130, 0, -100); // Ẩn hiện khu đồng lúa hoang vắng
+    scene.add(baDongNPC);
+
+    // 11. Đội ngũ NPC Công An Tuần Tra
+    for(let i=0; i<7; i++) {
+        let cop = spawnNPC(-10 - i*15, 15, 0x1b5e20, 'police', `Công An Viên ${i+1}`);
+        policeNPCs.push(cop);
+    }
+
+    // 12. Tổ phóng viên 4 người của Đài truyền thanh Xã Phước Vinh
+    for(let i=0; i<4; i++) {
+        let reporter = spawnNPC(70 + i*4, 45, 0x3f51b5, 'journalist', `Phóng viên ${i+1}`);
+        journalists.push(reporter);
+    }
+    // Đặt một mô hình giả lập Máy quay phim truyền hình trước tổ phóng viên
+    const camBox = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 3), new THREE.MeshStandardMaterial({color: 0x222}));
+    camBox.position.set(76, 2, 49); scene.add(camBox);
+
+    // Rải lúa chín tự nhiên trên đồng ruộng sinh tồn
+    const riceMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+    for(let i=0; i<24; i++) {
+        const rice = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.5), riceMat);
+        rice.position.set(90 + Math.random() * 100, 1.25, -20 - Math.random() * 90);
+        rice.userData = { type: 'rice_crop' };
+        scene.add(rice);
+        interactables.push(rice);
+    }
+}
+
+// --- NPC NỀN KHÔNG TƯƠNG TÁC: TẠO KHÔNG KHÍ ĐÔNG ĐÚC CHO XÃ PHƯỚC VINH ---
+function buildDecorativeNPCs() {
+    const palette = [0x795548,0x607d8b,0x8d6e63,0x546e7a,0xa1887f,0x78909c,0x6d4c41,0x455a64,0x8d99ae,0x9e9e9e,0xbcaaa4,0x90a4ae];
+
+    function makeFigure(color, seated) {
+        const group = new THREE.Group();
+        const bodyH = seated ? 1.0 : 2.2;
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, bodyH, 10), new THREE.MeshStandardMaterial({ color }));
+        body.position.y = bodyH / 2; body.castShadow = true;
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 10), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+        head.position.y = bodyH + 0.45; head.castShadow = true;
+        group.add(body, head);
+        return group;
+    }
+
+    // 10 NPC ngồi rải rác quanh chợ và xóm (ngồi bán hàng, tám chuyện, nghỉ chân)
+    const sitSpots = [[45,64],[60,99],[78,119],[92,102],[28,92],[112,58],[-32,32],[8,-12],[128,-42],[-58,22]];
+    sitSpots.forEach(([x, z]) => {
+        const fig = makeFigure(palette[Math.floor(Math.random() * palette.length)], true);
+        fig.position.set(x, 0, z);
+        scene.add(fig);
+    });
+
+    // 5 NPC đứng cố định quanh khu trung tâm
+    const standSpots = [[18,62],[102,92],[-22,-6],[62,32],[-98,12]];
+    standSpots.forEach(([x, z]) => {
+        const fig = makeFigure(palette[Math.floor(Math.random() * palette.length)], false);
+        fig.position.set(x, 0, z);
+        scene.add(fig);
+    });
+
+    // 7 NPC đi lòng vòng ngẫu nhiên khắp xã
+    const walkSpots = [[10,50],[80,70],[-40,15],[130,90],[0,-30],[-70,-40],[150,40]];
+    walkSpots.forEach(([x, z], idx) => {
+        const fig = makeFigure(palette[Math.floor(Math.random() * palette.length)], false);
+        fig.position.set(x, 0, z);
+        scene.add(fig);
+        decorWalkers.push({ mesh: fig, baseX: x, baseZ: z, offset: idx * 1.3 });
+    });
+
+    // xe máy chạy qua lại trên các trục đường chính
+    const vehicleColors = [0x263238, 0xb71c1c, 0x1565c0, 0x2e7d32];
+    for (let i = 0; i < 7; i++) {
+        const veh = new THREE.Group();
+        const bikeBody = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 2.8), new THREE.MeshStandardMaterial({ color: vehicleColors[i] }));
+        bikeBody.position.y = 0.8; bikeBody.castShadow = true;
+        const driver = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0x37474f }));
+        driver.position.set(0, 1.8, 0);
+        veh.add(bikeBody, driver);
+        scene.add(veh);
+        decorVehicles.push({ mesh: veh, lane: i });
+    }
+}
+
+function updateDecorativeNPCs() {
+    const t = Date.now() * 0.0007;
+    decorWalkers.forEach(w => {
+        w.mesh.position.x = w.baseX + Math.sin(t + w.offset) * 12;
+        w.mesh.position.z = w.baseZ + Math.cos(t * 0.8 + w.offset) * 12;
+    });
+
+    const tv = Date.now() * 0.00035;
+    decorVehicles.forEach(v => {
+        if (v.lane === 0) { // Trục đường ngang chính, chạy chiều Đông
+            v.mesh.position.set(-260 + ((tv * 400 + v.lane * 150) % 520), 0, 20);
+            v.mesh.rotation.y = Math.PI / 2;
+        } else if (v.lane === 1) { // Trục đường ngang chính, chạy chiều Tây
+            v.mesh.position.set(260 - ((tv * 400 + v.lane * 150) % 520), 0, 20);
+            v.mesh.rotation.y = -Math.PI / 2;
+        } else if (v.lane === 2) { // Đường dọc phía Tây (qua xưởng hạt điều)
+            v.mesh.position.set(-70, 0, -280 + ((tv * 400 + v.lane * 150) % 480));
+        } else { // Đường dọc trung tâm
+            v.mesh.position.set(25, 0, 130 - ((tv * 400 + v.lane * 150) % 480));
+            v.mesh.rotation.y = Math.PI;
+        }
+    });
+}
+
+// --- TRANG TRÍ CHỢ PHƯỚC VINH THEO ẢNH THỰC TẾ (DÙ XANH, ĐẤT ĐỎ, SỌT RAU, XE ĐẬU) ---
+function buildMarketAmbience() {
+    // Nền đất chợ màu đất đỏ/nâu giống ảnh thực tế
+    const dirtGround = new THREE.Mesh(
+        new THREE.PlaneGeometry(140, 90),
+        new THREE.MeshStandardMaterial({ color: 0xb08968, roughness: 1 })
+    );
+    dirtGround.rotation.x = -Math.PI / 2;
+    dirtGround.position.set(65, 0.06, 100);
+    scene.add(dirtGround);
+
+    // Dù che màu xanh lá trên các sạp chợ, giống trong ảnh thực tế
+    const umbrellaMat = new THREE.MeshStandardMaterial({ color: 0x2f5233, roughness: 0.9 });
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    for (let i = 0; i < 12; i++) {
+        let rx = 40 + (i % 4) * 15;
+        let rz = 70 + Math.floor(i / 4) * 12;
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3.2), poleMat);
+        pole.position.set(rx, 1.6, rz);
+        scene.add(pole);
+        const umbrella = new THREE.Mesh(new THREE.ConeGeometry(3.2, 1.4, 8), umbrellaMat);
+        umbrella.position.set(rx, 3.4, rz);
+        scene.add(umbrella);
+    }
+
+    // Xe máy đậu quanh chợ giống ảnh thực tế
+    const bikeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
+    const bikeSpots = [[35,65],[95,75],[105,95],[50,120]];
+    bikeSpots.forEach(([x, z]) => {
+        const bike = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 2.6), bikeMat);
+        bike.position.set(x, 0.6, z);
+        scene.add(bike);
+    });
+
+    // Sọt rau củ nhiều màu như trong ảnh
+    const basketColors = [0xff6f00, 0x33691e, 0xd32f2f];
+    for (let i = 0; i < 12; i++) {
+        const basket = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 1.4), new THREE.MeshStandardMaterial({ color: basketColors[i % basketColors.length] }));
+        basket.position.set(40 + (i % 6) * 16, 0.4, 66 + Math.floor(i / 6) * 50);
+        scene.add(basket);
+    }
+}
+
+// --- ĐIỀU KHIỂN & KHÓA GÓC NHÌN ---
+function updateCameraRotation() {
+    pitch = Math.max(-Math.PI/2.4, Math.min(Math.PI/2.4, pitch));
+    camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+}
+
+function setupDesktopControls() {
+    let isLocked = false;
+    document.body.addEventListener('click', () => { if(!isLocked) document.body.requestPointerLock(); });
+    document.addEventListener('pointerlockchange', () => { isLocked = document.pointerLockElement === document.body; });
+    document.addEventListener('mousemove', (e) => {
+        if(isLocked) {
+            yaw -= e.movementX * CONFIG.lookSpeedDesktop;
+            pitch -= e.movementY * CONFIG.lookSpeedDesktop;
+            updateCameraRotation();
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        handleKey(e.code, true);
+        if(e.code === 'KeyE') checkInteraction();
+        if(e.code === 'KeyF') executeAttackAction();
+        if(e.code === 'KeyP') plantSeed();
+        if(e.code === 'KeyG') { isProstratingBeforeMarchers = true; }
+    });
+    document.addEventListener('keyup', (e) => {
+        handleKey(e.code, false);
+        if(e.code === 'KeyG') { isProstratingBeforeMarchers = false; }
+    });
+}
+
+function handleKey(code, isDown) {
+    if(code==='KeyW'||code==='ArrowUp') moveF = isDown; 
+    if(code==='KeyS'||code==='ArrowDown') moveB = isDown;
+    if(code==='KeyA'||code==='ArrowLeft') moveL = isDown; 
+    if(code==='KeyD'||code==='ArrowRight') moveR = isDown;
+}
+
+function setupMobileControls() {
+    const joyZone = document.getElementById("joystick-zone");
+    const stick = document.getElementById("stick");
+    joyZone.addEventListener("touchstart", handleJoy, {passive:false});
+    joyZone.addEventListener("touchmove", handleJoy, {passive:false});
+    joyZone.addEventListener("touchend", () => {
+        joyX = joyY = 0; stick.style.transform = `translate(0px, 0px)`;
+        moveF = moveB = moveL = moveR = false;
+    });
+
+    function handleJoy(e) {
+        e.preventDefault();
+        const touch = e.changedTouches[0]; const rect = joyZone.getBoundingClientRect();
+        let dx = touch.clientX - rect.left - 70; let dy = touch.clientY - rect.top - 70;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist > 45) { dx = (dx/dist)*45; dy = (dy/dist)*45; }
+        stick.style.transform = `translate(${dx}px, ${dy}px)`;
+        joyX = dx/45; joyY = dy/45;
+        moveF = joyY < -0.2; moveB = joyY > 0.2;
+        moveL = joyX < -0.2; moveR = joyX > 0.2;
+    }
+
+    const lookZone = document.getElementById("look-zone");
+    lookZone.addEventListener("touchstart", (e) => {
+        if(!lookTouchId) { lookTouchId = e.changedTouches[0].identifier; lastLookX = e.changedTouches[0].clientX; lastLookY = e.changedTouches[0].clientY; }
+    }, {passive:false});
+    lookZone.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        for(let touch of e.changedTouches) {
+            if(touch.identifier === lookTouchId) {
+                yaw -= (touch.clientX - lastLookX) * CONFIG.lookSpeedMobile;
+                pitch -= (touch.clientY - lastLookY) * CONFIG.lookSpeedMobile;
+                updateCameraRotation();
+                lastLookX = touch.clientX; lastLookY = touch.clientY;
+            }
+        }
+    }, {passive:false});
+    lookZone.addEventListener("touchend", (e) => {
+        for(let touch of e.changedTouches) { if(touch.identifier === lookTouchId) lookTouchId = null; }
+    });
+
+    btnInteract.addEventListener("click", checkInteraction);
+    btnAttack.addEventListener("click", executeAttackAction);
+    btnPlant.addEventListener("click", plantSeed);
+    // Nút phủ phục trước Nightmarchers – giữ = an toàn, buông = nguy hiểm
+    btnProstate.addEventListener("touchstart", (e) => { e.preventDefault(); isProstratingBeforeMarchers = true; btnProstate.style.background = "rgba(49,27,146,0.98)"; }, { passive: false });
+    btnProstate.addEventListener("touchend",   ()  => { isProstratingBeforeMarchers = false; btnProstate.style.background = "rgba(103,58,183,0.95)"; });
+    btnProstate.addEventListener("touchcancel",()  => { isProstratingBeforeMarchers = false; btnProstate.style.background = "rgba(103,58,183,0.95)"; });
+}
+
+// --- HỆ THỐNG XỬ LÝ DIỄN BIẾN TƯƠNG TÁC NPC ---
+const raycaster = new THREE.Raycaster();
+function checkInteraction() {
+    if(!targetNPC) return;
+    
+    let type = targetNPC.userData.type;
+    let label = targetNPC.userData.label;
+
+    // A. Gặt lúa ngoài đồng ruộng Phước Vinh
+    if(type === 'rice_crop') {
+        scene.remove(targetNPC);
+        interactables.splice(interactables.indexOf(targetNPC), 1);
+        inventory.rice += 0.25; // Thu hoạch được lúa thô
+        showActionText("🌾 Đã gặt thành công +250g Lúa chín!");
+        updatePrices();
+        return;
+    }
+
+    // B. Logic thoại và giao dịch thương mại với các NPC đặc thù
+    switch(type) {
+        case 'seed_seller':
+            let seedP = economy.currentPrice.seed;
+            if(inventory.money >= seedP) {
+                inventory.money -= seedP;
+                inventory.seeds += 1;
+                showActionText(`${label}: "Giao dịch xong! Gửi cháu 1 túi hạt giống giá ${seedP.toLocaleString()} đ."`);
+            } else {
+                showActionText(`${label}: "Không đủ tiền mua hạt giống rồi cháu ơi!Tại Cháu đó"`);
+            }
+            break;
+
+        case 'fish_buyer':
+            if(inventory.fish > 0) {
+                let fishP = economy.currentPrice.fish * inventory.fish;
+                inventory.money += fishP;
+                showActionText(`${label}: "Cá sông ngon đó! Thu mua toàn bộ gửi cháu ${fishP.toLocaleString()} đ."`);
+                inventory.fish = 0;
+            } else {
+                showActionText(`${label}: "Có câu được con cá nào ở kênh địa phương đâu mà bán?khùng ghê"`);
+            }
+            break;
+
+        case 'creditor':
+            if(inventory.debt > 0) {
+                if(inventory.money >= inventory.debt) {
+                    inventory.money -= inventory.debt;
+                    inventory.debt = 0;
+                    showActionText(`${label}: "Tốt! Coi như mày biết điều, đã thanh toán sạch nợ gốc!"`);
+                } else {
+                    showActionText(`${label}: "Tiền mặt mày có không đủ trả nợ! Liệu hồn tao đập trận bây giờ, chơi gay nên không có tiền chứ gì"`);
+                    // Chủ nợ phản kháng đập người chơi :))))
+                    crimeAlert = true;
+                }
+            } else {
+                showActionText(`${label}: "Hôm nay sạch nợ rồi, biến đi chỗ khác chơi!"`);
+            }
+            break;
+
+        case 'bao_gay':
+            showActionText(`${label}: "Chào bro, tôi là Bảo học lớp 8 ở Phước Vinh và chơi gay :) và nhà mình nghèooooooooooooooooo lắm và nhà tôi sửa đồ hẹ hẹ!? (づ￣ ³￣)づ chơi gay với mình Không, tôi yêu bạn (¯︶¯) :&)"`);
+            break;
+
+        case 'bhx_worker':
+            let noodleP = economy.currentPrice.noodle;
+            if(inventory.money >= noodleP) {
+                inventory.money -= noodleP;
+                inventory.noodles += 1;
+                showActionText(`${label}: "Cảm ơn quý khách đã ủng hộ BHX Ấp Phước Lợi! Mì gói của bạn hết ${noodleP.toLocaleString()} đ."`);
+            } else {
+                showActionText(`${label}: "Không đủ tiền mua mì gói rồi ạ nghèo ghê á!"`);
+            }
+            break;
+
+        case 'hair_salon':
+            showActionText(`${label}: "Chào mừng đến Tiệm Tóc Kiều My! Hôm nay lạm phát cao quá, cắt ngắn gọn gàng đón mùa mới nha?:?)"`);
+            break;
+
+        case 'cashew_worker':
+            if(inventory.rice > 0) {
+                let exchangeMoney = economy.currentPrice.rice * inventory.rice;
+                inventory.money += exchangeMoney;
+                showActionText(`${label}: "Xưởng nhận bao lúa thô này làm lương thực cho công nhân, trả bạn ${exchangeMoney.toLocaleString()} đ!"`);
+                inventory.rice = 0;
+            } else {
+                showActionText(`${label}: "Xưởng đang gia công tách lụa hạt điều, muốn kiếm thêm tiền hãy mang lúa chín tới đổi!"`);
+            }
+            break;
+
+        case 'tu_do':
+            const stories = [
+                "Ngày xưa vùng biên giới Phước Vinh này hoang sơ lắm, giờ có chợ búa đông vui đường nhựa thẳng tắp.",
+                "Nghe giang hồ đồn khu đồng lúa phía đông có Ông Ba Đồng hay xuất hiện lúc chập tối hù dọa tụi nhỏ đó!",
+                "Lo mà nam mô đi con mà Cháu là ai vậy"
+            ];
+            let randStr = stories[Math.floor(Math.random() * stories.length)];
+            showActionText(`Ông Tư Đô kể: "${randStr}"`);
+            break;
+
+        case 'rice_buyer':
+            if(inventory.rice > 0) {
+                let riceBuyP = economy.currentPrice.rice * inventory.rice;
+                inventory.money += riceBuyP;
+                showActionText(`${label}: "Lúa chín đẹp quá, Ông thu mua hết cho con nè, gửi con ${riceBuyP.toLocaleString()} đ!"`);
+                inventory.rice = 0;
+            } else {
+                showActionText(`${label}: "Con chưa có lúa nào để bán cho Ông hết á, ráng gặt thêm đi!"`);
+            }
+            break;
+
+        case 'appliance_seller':
+            let appP = economy.currentPrice.appliance;
+            if(inventory.money >= appP) {
+                inventory.money -= appP;
+                inventory.appliances += 1;
+                showActionText(`${label}: "Đã bán cho bạn 1 chiếc Tivi siêu dễ hư giá ${appP.toLocaleString()} đ!"`);
+            } else {
+                showActionText(`${label}: "Đồ gia dụng đắt đỏ lắm, tích lũy thêm tiền đi.←_←"`);
+            }
+            break;
+        case 'mind_reader':
+            if (document.pointerLockElement) {
+                document.exitPointerLock();
+            }
+            
+            let wantToPlay = confirm('Tôi có thể đọc suy nghĩ của bạn, bạn có muốn chơi không?\n\n(Bấm "OK" để Có, "Cancel" để Không)');
+            
+            if (wantToPlay) {
+                alert("Bước 1: bạn chọn một số bất kỳ có 3 chữ số\nBước 2: đảo ngược thứ tự các chữ số đó\nBước 3: Lấy số lớn hơn trừ đi số nhỏ hơn\nBước 4: Lấy kết quả đó, lại đảo ngược các chữ số của nó\nBước 5: Lấy hai kết quả vừa rồi cộng lại với nhau");
+                alert("Sau đó...\nBước 1: bạn chọn một số bất kỳ.\nBước 2: Cộng thêm 3.\nBước 3: Nhân kết quả đó với 2.\nBước 4: Trừ đi 4.\nBước 5: Chia cho 2.\nBước 6: Trừ đi số ban đầu mà bạn đã chọn.");
+                showActionText(`${label}: "Kết quả 2 phép tính đó lần lượt là 1089 và 1 haha"`);
+            }
+            break;
+
+        case 'police':
+            if(crimeAlert) {
+                showActionText(`${label}: "Anh bị bắt giữ vì hành vi gây rối trật tự địa phương!"`);
+                resetPlayerState();
+            } else {
+                showActionText(`${label}: "Chúng tôi đang đi tuần tra kiểm soát an ninh trật tự Ấp Phước Lợi."`);
+            }
+            break;
+
+        case 'journalist':
+            showActionText(`[Thời Sự Phước Vinh]: "Điểm tin hôm nay xã Phước Vinh ghi nhận sự biến động mạnh của chỉ số giá tiêu dùng..."`);
+            break;
+
+        case 'fishing_spot':
+            tryFishing();
+            break;
+    }
+    updatePrices();
+}
+
+// --- CƠ CHẾ KHỞI ĐỘNG HÀNH VI BẠO LỰC (ẤN F) ---
+function executeAttackAction() {
+    raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+    const intersects = raycaster.intersectObjects(interactables, true);
+    if(intersects.length > 0 && intersects[0].distance < 14) {
+        let obj = intersects[0].object;
+        while(obj.parent && obj.userData.type === undefined) { obj = obj.parent; }
+        
+        if(obj.userData.type === 'creditor') {
+            showActionText("💥 BẠN ĐÃ TẤN CÔNG CHỦ NỢ! BÁO ĐỘNG KHẨN CẤP CHO ĐỘI CÔNG AN!");
+            crimeAlert = true;
+            copSpeed = 0.65; // Lực lượng chức năng tăng tốc độ truy đuổi
+        } else {
+            // Đánh các mục tiêu kinh tế khác gây hoảng loạn thị trường dẫn tới siêu lạm phát
+            triggerHyperInflation();
+        }
+    }
+}
+
+// --- CƠ CHẾ GIEO TRỒNG LÚA (ẤN P KHI ĐỨNG TRONG KHU ĐỒNG RUỘNG) ---
+const FIELD_CENTER = { x: 150, z: -60 };
+const FIELD_RADIUS = 90;
+function plantSeed() {
+    if(inventory.seeds <= 0) {
+        showActionText("🌱 Bạn không còn hạt giống nào để gieo, hãy mua thêm ở chợ!");
+        return;
+    }
+    const pos = camera.position;
+    const distToField = Math.hypot(pos.x - FIELD_CENTER.x, pos.z - FIELD_CENTER.z);
+    if(distToField > FIELD_RADIUS) {
+        showActionText("🚜 Phải ra tới khu đồng lúa phía Đông mới gieo trồng được!");
+        return;
+    }
+    inventory.seeds -= 1;
+    const sproutMat = new THREE.MeshStandardMaterial({ color: 0x9ccc65 });
+    const sprout = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.2), sproutMat);
+    sprout.position.set(pos.x, 0.6, pos.z);
+    sprout.userData = { type: 'growing_rice', plantedAt: Date.now() };
+    scene.add(sprout);
+    interactables.push(sprout);
+    showActionText("🌱 Đã gieo hạt giống xuống đồng! Quay lại sau ít phút để gặt lúa chín.");
+    updatePrices();
+}
+
+function checkCropGrowth() {
+    const GROW_TIME_MS = 45000; // Lúa chín sau 45 giây
+    interactables.forEach(obj => {
+        if(obj.userData.type === 'growing_rice' && Date.now() - obj.userData.plantedAt > GROW_TIME_MS) {
+            obj.userData.type = 'rice_crop';
+            obj.material.color.set(0xffd700);
+            obj.geometry.dispose();
+            obj.geometry = new THREE.CylinderGeometry(0.2, 0.2, 2.5);
+        }
+    });
+}
+
+function resetPlayerState() {
+    crimeAlert = false;
+    inventory.money = Math.max(10000, Math.round(inventory.money * 0.8)); // Bị phạt tịch thu 20% tài sản tiền mặt
+    camera.position.set(0, CONFIG.playerHeight, 80); // Đưa về điểm xuất phát
+    yaw = Math.PI; pitch = 0; updateCameraRotation();
+    showActionText("👮 Bạn đã bị xử lý vi phạm hành chính. Khấu trừ 20% tiền mặt tiền án!");
+    updatePrices();
+}
+
+let dialogueLockUntil = 0;
+function showActionText(text) {
+    uiAction.innerText = text; uiAction.style.display = "block";
+    dialogueLockUntil = Date.now() + 5000; // Khóa không cho crosshair ghi đè trong 5s
+    setTimeout(() => { uiAction.style.display = "none"; }, 5000);
+}
+
+// --- VÒNG LẶP HỆ THỐNG VÀ AI MÔ PHỎNG ---
+function updatePhysics() {
+    let dirZ = Number(moveF) - Number(moveB);
+    let dirX = Number(moveR) - Number(moveL);
+    if (dirZ === 0 && dirX === 0) return;
+
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    forward.y = 0; forward.normalize();
+
+    const right = new THREE.Vector3();
+    right.crossVectors(new THREE.Vector3(0, 1, 0), forward).normalize();
+
+    const moveVec = new THREE.Vector3();
+    moveVec.addScaledVector(forward, dirZ * CONFIG.speed);
+    moveVec.addScaledVector(right, dirX * CONFIG.speed);
+
+    const cx = camera.position.x; const cz = camera.position.z;
+    const cy = CONFIG.playerHeight / 2;
+    const pSize = new THREE.Vector3(1.8, CONFIG.playerHeight, 1.8);
+
+    // Xử lý chống đi xuyên tường vật lý
+    const nextX = Math.max(-CONFIG.mapLimit, Math.min(CONFIG.mapLimit, cx + moveVec.x));
+    const boxX = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(nextX, cy, cz), pSize);
+    let blockedX = false;
+    for (const box of colliderBoxes) { if (boxX.intersectsBox(box)) { blockedX = true; break; } }
+    if (!blockedX) camera.position.x = nextX;
+
+    const nextZ = Math.max(-CONFIG.mapLimit, Math.min(CONFIG.mapLimit, cz + moveVec.z));
+    const boxZ = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(camera.position.x, cy, nextZ), pSize);
+    let blockedZ = false;
+    for (const box of colliderBoxes) { if (boxZ.intersectsBox(box)) { blockedZ = true; break; } }
+    if (!blockedZ) camera.position.z = nextZ;
+}
+
+function updateAIEntities() {
+    // 1. AI Đội ngũ Công An tuần tra
+    policeNPCs.forEach((cop, idx) => {
+        if(crimeAlert) {
+            // Chế độ truy nã: Tự động áp sát người chơi theo thuật toán vector
+            let pPos = camera.position;
+            let cPos = cop.position;
+            let dir = new THREE.Vector3().subVectors(pPos, cPos);
+            dir.y = 0; dir.normalize();
+            cop.position.addScaledVector(dir, copSpeed);
+            cop.lookAt(pPos.x, cop.position.y, pPos.z);
+
+            // Khoảng cách bắt giữ sát sườn
+            if(cPos.distanceTo(pPos) < 4) {
+                resetPlayerState();
+            }
+        } else {
+            // Chế độ đi tuần bình thường quanh khu trung tâm
+            let time = Date.now() * 0.0006 + idx;
+            cop.position.x += Math.sin(time) * 0.12;
+            cop.position.z += Math.cos(time) * 0.08;
+        }
+    });
+
+    // 2. Thực thể Kinh Dị - Ông Ba Đồng xuất hiện tuần tra lúa
+    if(baDongNPC) {
+        baDongAngle += 0.01;
+        // Di chuyển quanh trục cánh đồng lúa hoang vắng
+        baDongNPC.position.x = 140 + Math.sin(baDongAngle) * 35;
+        baDongNPC.position.z = -60 + Math.cos(baDongAngle) * 35;
+        
+        // Kiểm tra khoảng cách hù dọa người chơi (Jumpscare)
+        let distToPlayer = baDongNPC.position.distanceTo(camera.position);
+        if(distToPlayer < 15) {
+            document.getElementById("jumpscare").style.display = "flex";
+            setTimeout(() => {
+                document.getElementById("jumpscare").style.display = "none";
+            }, 800);
+            // Đẩy lùi người chơi ra xa khu đồng ruộng
+            camera.position.x -= 20;
+        }
+    }
+}
+// Cập nhật tâm ngắm đổi màu khi hướng vào vật thể tương tác được
+function updateCrosshairUI() {
+    raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+    const intersects = raycaster.intersectObjects(interactables, true);
+    
+    if(intersects.length > 0 && intersects[0].distance < 15) {
+        let obj = intersects[0].object;
+        while(obj.parent && obj.userData.type === undefined) { obj = obj.parent; }
+        
+        targetNPC = obj;
+        uiCrosshair.style.background = "#ff9800";
+        uiCrosshair.style.transform = "translate(-50%, -50%) scale(1.6)";
+        if(obj.userData.label && Date.now() > dialogueLockUntil) {
+            uiAction.innerText = `[${obj.userData.label}] \n Nhấn E để nói chuyện / F để tác động`;
+            uiAction.style.display = "block";
+        }
+    } else {
+        targetNPC = null;
+        uiCrosshair.style.background = "rgba(255,255,255,0.9)";
+        uiCrosshair.style.transform = "translate(-50%, -50%) scale(1)";
+        if(uiAction.style.display === "block" && uiAction.innerText.includes("Nhấn E") && Date.now() > dialogueLockUntil) {
+            uiAction.style.display = "none";
+        }
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    updatePhysics();
+    updateAIEntities();
+    updateCrosshairUI();
+    updateDecorativeNPCs();
+    updateDayNightSystem();
+    updateFootballKids();
+    updateFishingPond();
+    updateNightmarchers();
+    checkCropGrowth();
+    updateDebugInfo()
+    renderer.render(scene, camera);
+}
+const DAYNIGHT_CYCLE_MS = 600000;
+const dayNightStart = Date.now();
+let envAmbientLight = null, envSunLight = null, envMoonLight = null;
+let sunSphere = null, moonSphere = null, starPoints = null;
+const uiDayPhase = document.getElementById("dayPhaseText");
+const SKY_NIGHT = new THREE.Color(0x060a1f), SKY_DAWN = new THREE.Color(0xff8a5c), SKY_DAY = new THREE.Color(0x95c8e2);
+const FOG_NIGHT = new THREE.Color(0x05070f), FOG_DAWN = new THREE.Color(0xffab91), FOG_DAY = new THREE.Color(0x95c8e2);
+const AMB_NIGHT = new THREE.Color(0x333a6e), AMB_DAWN = new THREE.Color(0xffcfa8), AMB_DAY = new THREE.Color(0xffffff);
+const SUN_DAWN  = new THREE.Color(0xffa366), SUN_DAY  = new THREE.Color(0xfffaee);
+const _tmpSky = new THREE.Color(), _tmpFog = new THREE.Color(), _tmpAmb = new THREE.Color(), _tmpSun = new THREE.Color();
+function buildDayNightSystem() {
+    scene.children.forEach(obj => {
+        if (obj.isAmbientLight) envAmbientLight = obj;
+        else if (obj.isDirectionalLight) envSunLight = obj;
+    });
+    envMoonLight = new THREE.DirectionalLight(0x8fa8ff, 0);
+    scene.add(envMoonLight);
+    sunSphere = new THREE.Mesh(new THREE.SphereGeometry(14, 20, 20), new THREE.MeshBasicMaterial({ color: 0xfff4d6, fog: false }));
+    moonSphere = new THREE.Mesh(new THREE.SphereGeometry(10, 20, 20), new THREE.MeshBasicMaterial({ color: 0xdfe6ff, fog: false }));
+    scene.add(sunSphere, moonSphere);
+    const starCount = 500;
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+        const r = 480, theta = Math.random() * Math.PI * 2, phi = Math.random() * Math.PI * 0.48;
+        starPos[i*3]   = Math.cos(theta) * Math.sin(phi) * r;
+        starPos[i*3+1] = Math.cos(phi) * r;
+        starPos[i*3+2] = Math.sin(theta) * Math.sin(phi) * r;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    starPoints = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2, transparent: true, opacity: 0, fog: false }));
+    starPoints.frustumCulled = false;
+    scene.add(starPoints);
+}
+
+function updateDayNightSystem() {
+    if (!envSunLight) return;
+
+    const elapsed = (Date.now() - dayNightStart) % DAYNIGHT_CYCLE_MS;
+    const cycleT = elapsed / DAYNIGHT_CYCLE_MS;
+    const sunAngle = cycleT * Math.PI * 2 - Math.PI / 2; 
+    const moonAngle = sunAngle + Math.PI;
+    const sunHeight = Math.sin(sunAngle); 
+    const moonHeight = Math.sin(moonAngle);
+    const rising = Math.cos(sunAngle) >= 0;
+    const dist = 420;
+    envSunLight.position.set(Math.cos(sunAngle) * dist, sunHeight * dist, 0);
+    envMoonLight.position.set(Math.cos(moonAngle) * dist, moonHeight * dist, 0);
+    sunSphere.position.set(camera.position.x + Math.cos(sunAngle) * dist, sunHeight * dist, camera.position.z);
+    moonSphere.position.set(camera.position.x + Math.cos(moonAngle) * dist, moonHeight * dist, camera.position.z);
+    starPoints.position.set(camera.position.x, 0, camera.position.z);
+    sunSphere.visible = sunHeight > -0.08;
+    moonSphere.visible = moonHeight > -0.08;
+
+    envSunLight.intensity = THREE.MathUtils.clamp(sunHeight, 0, 1) * 1.1;
+    envMoonLight.intensity = THREE.MathUtils.clamp(moonHeight, 0, 1) * 0.3;
+
+    // Nội suy màu bầu trời / sương mù / đèn môi trường quanh mốc chân trời (tạo ráng cam bình minh & hoàng hôn)
+    const edge = 0.35;
+    let ambIntensity;
+    if (sunHeight < 0) {
+        const t = THREE.MathUtils.clamp((sunHeight + edge) / edge, 0, 1);
+        _tmpSky.lerpColors(SKY_NIGHT, SKY_DAWN, t);
+        _tmpFog.lerpColors(FOG_NIGHT, FOG_DAWN, t);
+        _tmpAmb.lerpColors(AMB_NIGHT, AMB_DAWN, t);
+        _tmpSun.copy(SUN_DAWN);
+        ambIntensity = THREE.MathUtils.lerp(0.18, 0.55, t);
+    } else {
+        const t = THREE.MathUtils.clamp(sunHeight / edge, 0, 1);
+        _tmpSky.lerpColors(SKY_DAWN, SKY_DAY, t);
+        _tmpFog.lerpColors(FOG_DAWN, FOG_DAY, t);
+        _tmpAmb.lerpColors(AMB_DAWN, AMB_DAY, t);
+        _tmpSun.lerpColors(SUN_DAWN, SUN_DAY, t);
+        ambIntensity = THREE.MathUtils.lerp(0.55, 0.65, t);
+    }
+
+    scene.background.copy(_tmpSky);
+    scene.fog.color.copy(_tmpFog);
+    envAmbientLight.color.copy(_tmpAmb);
+    envAmbientLight.intensity = ambIntensity;
+    envSunLight.color.copy(_tmpSun);
+    starPoints.material.opacity = THREE.MathUtils.clamp(-sunHeight * 1.6, 0, 0.9);
+
+    if (uiDayPhase) {
+        if (sunHeight > 0.35) uiDayPhase.innerText = "☀️ Ban ngày";
+        else if (sunHeight > -0.35) uiDayPhase.innerText = rising ? "🌅 Bình minh" : "🌇 Hoàng hôn";
+        else uiDayPhase.innerText = "🌙 Ban đêm";
+    }
+}
+const SOCCER_CENTER = { x: 6, z: 54 };
+const SOCCER_RADIUS_X = 9, SOCCER_RADIUS_Z = 7;
+const KID_JERSEY_COLORS = [0xff5252, 0xffd740, 0x448aff, 0x69f0ae, 0xff6e40];
+const footballKids = [];
+let footballBall = null;
+
+function spawnKidFigure(color) {
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 1.1, 10), new THREE.MeshStandardMaterial({ color }));
+    body.position.y = 0.55; body.castShadow = true;
+    const shorts = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.32, 0.35, 10), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    shorts.position.y = 0.28;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+    head.position.y = 1.28; head.castShadow = true;
+    group.add(body, shorts, head);
+    scene.add(group);
+    return group;
+}
+
+function createSoccerBallTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f5f5f5'; ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#1a1a1a';
+    [[24,24],[96,24],[24,96],[96,96],[64,64],[64,8],[64,120]].forEach(([x,y]) => {
+        ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill();
+    });
+    return new THREE.CanvasTexture(canvas);
+}
+
+function buildGoalPost(x, z) {
+    const group = new THREE.Group();
+    const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const postGeo = new THREE.CylinderGeometry(0.12, 0.12, 2.4, 8);
+    const postL = new THREE.Mesh(postGeo, postMat); postL.position.set(-1.6, 1.2, 0);
+    const postR = new THREE.Mesh(postGeo, postMat); postR.position.set(1.6, 1.2, 0);
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 3.3, 8), postMat);
+    bar.rotation.z = Math.PI / 2; bar.position.set(0, 2.4, 0);
+    group.add(postL, postR, bar);
+    group.position.set(x, 0, z);
+    scene.add(group);
+}
+
+function buildFootballKids() {
+    footballBall = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ map: createSoccerBallTexture() }));
+    scene.add(footballBall);
+
+    const kidCount = 5;
+    for (let i = 0; i < kidCount; i++) {
+        const kid = spawnKidFigure(KID_JERSEY_COLORS[i % KID_JERSEY_COLORS.length]);
+        footballKids.push({
+            mesh: kid,
+            chaseAngle: (i / kidCount) * Math.PI * 2,
+            followDist: 2.6 + Math.random() * 1.6,
+            bobPhase: Math.random() * Math.PI * 2,
+            speedVar: 0.8 + Math.random() * 0.5
+        });
+    }
+
+    buildGoalPost(SOCCER_CENTER.x, SOCCER_CENTER.z - SOCCER_RADIUS_Z - 3);
+    buildGoalPost(SOCCER_CENTER.x, SOCCER_CENTER.z + SOCCER_RADIUS_Z + 3);
+}
+function updateFootballKids() {
+    if (!footballBall) return;
+    const t = Date.now() * 0.001;
+    const bx = SOCCER_CENTER.x + Math.sin(t * 0.7) * SOCCER_RADIUS_X;
+    const bz = SOCCER_CENTER.z + Math.sin(t * 1.1 + 1.3) * SOCCER_RADIUS_Z;
+    footballBall.position.set(bx, 0.4 + Math.abs(Math.sin(t * 6)) * 0.25, bz);
+    footballBall.rotation.x += 0.18;
+    footballBall.rotation.z += 0.12;
+
+    footballKids.forEach(k => {
+        const angle = k.chaseAngle + t * 0.6 * k.speedVar;
+        const tx = bx + Math.cos(angle) * k.followDist;
+        const tz = bz + Math.sin(angle) * k.followDist;
+        k.mesh.position.x = tx;
+        k.mesh.position.z = tz;
+        k.mesh.position.y = Math.abs(Math.sin(t * 9 * k.speedVar + k.bobPhase)) * 0.3;
+        k.mesh.lookAt(bx, k.mesh.position.y, bz);
+    });
+}
+const POND_CENTER = { x: -100.14, z: -20.48 };
+const POND_RADIUS = 13;
+const pondFish = [];
+let isFishing = false;
+let lastFishTime = -999999;
+const FISHING_COOLDOWN_MS = 18000;
+function buildFishingPond() {
+    const bank = new THREE.Mesh(
+        new THREE.CircleGeometry(POND_RADIUS + 2.5, 28),
+        new THREE.MeshStandardMaterial({ color: 0x8d6e4f, roughness: 1 })
+    );
+    bank.rotation.x = -Math.PI / 2;
+    bank.position.set(POND_CENTER.x, 0.04, POND_CENTER.z);
+    scene.add(bank);
+    const water = new THREE.Mesh(
+        new THREE.CircleGeometry(POND_RADIUS, 28),
+        new THREE.MeshStandardMaterial({ color: 0x2389da, roughness: 0.25, metalness: 0.15, transparent: true, opacity: 0.88 })
+    );
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(POND_CENTER.x, 0.09, POND_CENTER.z);
+    scene.add(water);
+    const fishColors = [0xff7043, 0xbdbdbd, 0xffca28, 0x8d6e63];
+    for (let i = 0; i < 7; i++) {
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 6), new THREE.MeshStandardMaterial({ color: fishColors[i % fishColors.length] }));
+        body.rotation.z = Math.PI / 2;
+        const tail = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.22, 4), new THREE.MeshStandardMaterial({ color: fishColors[i % fishColors.length] }));
+        tail.rotation.z = -Math.PI / 2; tail.position.x = -0.35;
+        group.add(body, tail);
+        scene.add(group);
+        pondFish.push({
+            mesh: group,
+            baseAngle: Math.random() * Math.PI * 2,
+            orbitRadius: 2 + Math.random() * (POND_RADIUS - 4),
+            speed: 0.3 + Math.random() * 0.5,
+            depth: -0.25 - Math.random() * 0.6
+        });
+    }
+
+    // Chòi câu nhỏ
+    const dock = new THREE.Group();
+    const postMat = new THREE.MeshStandardMaterial({ color: 0x6d4c41 });
+    const post1 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.6, 8), postMat); post1.position.set(-1, 0.8, 0);
+    const post2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.6, 8), postMat); post2.position.set(1, 0.8, 0);
+    const plank = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.15, 1.4), postMat); plank.position.set(0, 1.65, 0);
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.2, 6), new THREE.MeshStandardMaterial({ color: 0x3e2723 }));
+    rod.rotation.z = Math.PI / 3.2; rod.position.set(0.5, 2.3, 0);
+    dock.add(post1, post2, plank, rod);
+    dock.position.set(POND_CENTER.x + POND_RADIUS + 1.5, 0, POND_CENTER.z);
+    dock.userData = { type: 'fishing_spot', label: 'Điểm câu cá' };
+    scene.add(dock);
+    interactables.push(dock);
+}
+
+function updateFishingPond() {
+    const t = Date.now() * 0.001;
+    pondFish.forEach(f => {
+        const angle = f.baseAngle + t * f.speed;
+        f.mesh.position.set(POND_CENTER.x + Math.cos(angle) * f.orbitRadius, f.depth, POND_CENTER.z + Math.sin(angle) * f.orbitRadius);
+        f.mesh.rotation.y = -angle + Math.PI / 2;
+    });
+}
+function tryFishing() {
+    if (isFishing) return;
+    const now = Date.now();
+    if (now - lastFishTime < FISHING_COOLDOWN_MS) {
+        const waitSec = Math.ceil((FISHING_COOLDOWN_MS - (now - lastFishTime)) / 1000);
+        showActionText(`🎣 Cần câu còn đang nghỉ, đợi thêm ${waitSec} giây nữa rồi câu tiếp nhé!`);
+        return;
+    }
+    isFishing = true;
+    showActionText("🎣 Thả câu xuống ao... chờ xem có cá cắn câu không nào!");
+    setTimeout(() => {
+        isFishing = false;
+        lastFishTime = Date.now();
+        if (Math.random() < 0.75) {
+            const caught = 1 + Math.floor(Math.random() * 2);
+            inventory.fish += caught;
+            showActionText(`🐟 Câu được ${caught} con cá tươi rói từ ao làng!`);
+        } else {
+            showActionText("💦 Hụt mất rồi, cá lanh quá! Thử câu lại xem sao.");
+        }
+        updatePrices();
+    }, 2500);
+}
+// NIGHTMARCHERS – HUAKA'I PŌ
+function buildNightmarchers() {
+    nmGroup = new THREE.Group();
+    nmGroup.visible = false; // Ẩn đến ban đêm
+    scene.add(nmGroup);
+
+    const bodyGeo  = new THREE.CylinderGeometry(0.42, 0.62, 3.0, 8);
+    const headGeo  = new THREE.SphereGeometry(0.52, 10, 10);
+    const torchGeo = new THREE.CylinderGeometry(0.065, 0.115, 1.3, 6);
+    const helmetGeo= new THREE.CylinderGeometry(0.35, 0.58, 0.55, 8);
+    const flameGeo = new THREE.SphereGeometry(0.24, 8, 8);
+    const spearGeo = new THREE.CylinderGeometry(0.045, 0.045, 3.8, 6);
+    const tipGeo   = new THREE.ConeGeometry(0.14, 0.55, 6);
+
+    for (let i = 0; i < NM_COUNT; i++) {
+        const nm = new THREE.Group();
+
+        // Thân chiến binh: màu xanh lam đậm bóng tối, bán trong suốt
+        const bodyMat = new THREE.MeshStandardMaterial({
+            color: 0x0c1830, emissive: 0x06101f,
+            transparent: true, opacity: 0.80 + Math.random() * 0.12
+        });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 1.5; body.castShadow = false;
+
+        // Đầu
+        const headMat = new THREE.MeshStandardMaterial({
+            color: 0x0a152a, emissive: 0x0d1f3a,
+            transparent: true, opacity: 0.88
+        });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 3.2;
+
+        // Mũ chiến binh (Mahiole)
+        const helmetMat = new THREE.MeshStandardMaterial({
+            color: 0x1a0a00, emissive: 0x0d0500, roughness: 0.9,
+            transparent: true, opacity: 0.92
+        });
+        const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+        helmet.position.y = 3.65;
+
+        // Cán giáo (Ko'oko'o)
+        const spearMat = new THREE.MeshStandardMaterial({ color: 0x2a1500, emissive: 0x100800 });
+        const spear = new THREE.Mesh(spearGeo, spearMat);
+        spear.position.set(-0.55, 1.9, 0); spear.rotation.z = Math.PI / 14;
+        const tipMat = new THREE.MeshStandardMaterial({ color: 0x606060, metalness: 0.7, roughness: 0.3 });
+        const tip = new THREE.Mesh(tipGeo, tipMat);
+        tip.position.set(-0.55 - Math.sin(Math.PI/14)*1.9, 1.9 + Math.cos(Math.PI/14)*1.9, 0);
+
+        // Đuốc Kukui (dầu hạt kukui – lửa cam vàng)
+        const torchMat = new THREE.MeshStandardMaterial({ color: 0x3d1a00 });
+        const torchMesh = new THREE.Mesh(torchGeo, torchMat);
+        torchMesh.position.set(0.7, 1.85, 0); torchMesh.rotation.z = Math.PI / 11;
+
+        // Ngọn lửa – màu cam–vàng
+        const hue = 0.06 + Math.random() * 0.04; // cam nhạt đến vàng
+        const flameMat = new THREE.MeshBasicMaterial({
+            color: new THREE.Color().setHSL(hue, 1, 0.55),
+            transparent: true, opacity: 0.95
+        });
+        const flame = new THREE.Mesh(flameGeo, flameMat);
+        flame.position.set(0.7 + Math.sin(Math.PI/11)*0.65, 1.85 + Math.cos(Math.PI/11)*0.65, 0);
+
+        nm.add(body, head, helmet, spear, tip, torchMesh, flame);
+
+        // Đặt trong hàng dọc (cột hành quân)
+        const rowOff = (i - (NM_COUNT - 1) / 2) * 2.4;
+        nm.position.set(NM_X_START, 0, NM_PATH_Z + rowOff);
+        nm.userData = { bobPhase: (i / NM_COUNT) * Math.PI * 2, flameRef: flame, idx: i };
+
+        nmGroup.add(nm);
+        nightmarchers.push(nm);
+
+        // Đèn đuốc PointLight – chỉ tạo cho 4 người (tránh quá nặng GPU)
+        if (i % 2 === 0) {
+            const tLight = new THREE.PointLight(0xff5500, 0, 20, 1.5);
+            scene.add(tLight);
+            nmTorches.push({ light: tLight, marcherRef: nm });
+        }
+    }
+}
+
+// -------------------------------------------------------
+// Trống chiến Pahu – tổng hợp âm thanh bằng Web Audio API
+// -------------------------------------------------------
+function nmStartDrums() {
+    if (nmAudioCtx) return;
+    try { nmAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (e) { return; }
+    let beat = 0;
+    function tick() {
+        if (!nmAudioCtx) return;
+        const sr  = nmAudioCtx.sampleRate;
+        const dur = beat % 4 === 0 ? 0.42 : 0.22;
+        const buf = nmAudioCtx.createBuffer(1, Math.floor(sr * dur), sr);
+        const d   = buf.getChannelData(0);
+        const freq = beat % 4 === 0 ? 72 : 110; // trống Pahu - trầm và dày
+        for (let k = 0; k < d.length; k++) {
+            const nt = k / sr;
+            const env = Math.exp(-nt * (beat % 4 === 0 ? 6 : 10));
+            // Sine chủ + chút noise hơi thở
+            d[k] = (Math.sin(2 * Math.PI * freq * nt * (1 - nt * 1.5)) * 0.7 + (Math.random() * 2 - 1) * 0.15) * env;
+        }
+        const src  = nmAudioCtx.createBufferSource(); src.buffer = buf;
+        const gain = nmAudioCtx.createGain(); gain.gain.value = beat % 4 === 0 ? 0.62 : 0.32;
+        src.connect(gain); gain.connect(nmAudioCtx.destination); src.start();
+        beat++;
+        nmDrumTimeout = setTimeout(tick, beat % 4 === 0 ? 1050 : 350);
+    }
+    tick();
+}
+
+function nmStopDrums() {
+    if (nmDrumTimeout) { clearTimeout(nmDrumTimeout); nmDrumTimeout = null; }
+    if (nmAudioCtx) { try { nmAudioCtx.close(); } catch(e) {} nmAudioCtx = null; }
+}
+
+// -------------------------------------------------------
+// Cập nhật đoàn mỗi frame (gọi từ animate)
+// -------------------------------------------------------
+function updateNightmarchers() {
+    if (!nmGroup || nightmarchers.length === 0) return;
+
+    // Lấy giá trị sunHeight từ chu kỳ ngày/đêm hiện tại
+    const elapsed  = (Date.now() - dayNightStart) % DAYNIGHT_CYCLE_MS;
+    const sunAngle = (elapsed / DAYNIGHT_CYCLE_MS) * Math.PI * 2 - Math.PI / 2;
+    const sunHeight = Math.sin(sunAngle);
+    const isNight   = sunHeight < -0.28; // Chỉ hoạt động khi trời đủ tối
+
+    // ── BAN NGÀY: Ẩn toàn bộ đoàn và tắt hiệu ứng ──────────
+    if (!isNight) {
+        if (nmActive) {
+            nmActive = false;
+            nmGroup.visible = false;
+            nmAlertShown = false;
+            nmStopDrums();
+            nmTorches.forEach(t => { t.light.intensity = 0; });
+            document.getElementById("nmOverlay").style.display  = "none";
+            document.getElementById("nmWarnText").style.display = "none";
+        }
+        return;
+    }
+
+    // ── KÍCH HOẠT LẦN ĐẦU KHI TRỜI TỐI ─────────────────────
+    if (!nmActive) {
+        nmActive = true;
+        nmGroup.visible = true;
+        nmProgress = Math.random() * 0.15; // Bắt đầu từ đầu tây, hơi ngẫu nhiên
+        nmDir = 1;
+        showActionText("🌙 Màn đêm buông xuống... Đêm nay không yên bình đâu.");
+    }
+
+    const t = Date.now() * 0.001;
+
+    // ── DI CHUYỂN TOÀN ĐOÀN DỌC TRỤC HÀNH QUÂN ─────────────
+    nmProgress += NM_SPEED * nmDir;
+    if (nmProgress >= 1.0) { nmDir = -1; nmProgress = 1.0; }
+    if (nmProgress <= 0.0) { nmDir =  1; nmProgress = 0.0; }
+
+    const baseX     = THREE.MathUtils.lerp(NM_X_START, NM_X_END, nmProgress);
+    // Góc quay theo chiều hành quân
+    const marchYaw  = nmDir > 0 ? Math.PI / 2 : -Math.PI / 2;
+
+    nightmarchers.forEach((nm, i) => {
+        const rowOff = (i - (NM_COUNT - 1) / 2) * 2.4;
+        nm.position.x = baseX;
+        nm.position.z = NM_PATH_Z + rowOff;
+        // Linh hồn trôi nhẹ trên mặt đất, không bước
+        nm.position.y = 0.3 + Math.sin(t * 1.7 + nm.userData.bobPhase) * 0.28;
+        nm.rotation.y = marchYaw;
+
+        // Ngọn lửa nhấp nháy
+        const fl = nm.userData.flameRef;
+        if (fl) {
+            fl.scale.setScalar(0.82 + Math.sin(t * 14 + nm.userData.bobPhase) * 0.28);
+            fl.material.opacity = 0.7 + Math.sin(t * 10 + i * 0.8) * 0.22;
+        }
+    });
+
+    // ── CẬP NHẬT ĐÈNH ĐUỐC ──────────────────────────────────
+    nmTorches.forEach((to, i) => {
+        const m = to.marcherRef;
+        to.light.position.set(m.position.x + 0.7, m.position.y + 1.9, m.position.z);
+        // Ánh sáng bập bùng chân thực
+        to.light.intensity = 1.6 + Math.sin(t * 11 + i * 2.1) * 0.55;
+        to.light.color.setHSL(0.06 + Math.sin(t * 3 + i) * 0.02, 1, 0.52);
+    });
+
+    let closestDist = Infinity;
+    nightmarchers.forEach(nm => {
+        const d = nm.position.distanceTo(camera.position);
+        if (d < closestDist) closestDist = d;
+    });
+
+    const nmOverlayEl  = document.getElementById("nmOverlay");
+    const nmWarnTextEl = document.getElementById("nmWarnText");
+
+    if (closestDist < NM_WARN_DIST && closestDist >= NM_DANGER_DIST) {
+        if (!nmAlertShown) {
+            nmAlertShown = true;
+            nmStartDrums();
+            showActionText("🥁 Tiếng trống Pahu vang lên... Đoàn Huaka'i Pō đang tiến đến! Hãy NẰM XUỐNG bấm G khi họ qua gần!");
+        }
+        const intensity = THREE.MathUtils.clamp((NM_WARN_DIST - closestDist) / (NM_WARN_DIST - NM_DANGER_DIST), 0, 1);
+        nmOverlayEl.style.display  = "block";
+        nmOverlayEl.style.opacity  = (intensity * 0.65).toString();
+        nmWarnTextEl.style.display = "block";
+        nmWarnTextEl.innerHTML =
+            `🔥 HUAKA'I PŌ – HÀNH QUÂN BÓNG ĐÊM 🔥<br>` +
+            `<span style="font-size:15px;color:#ffcc00">⚠ Đoàn chiến binh đang tiến gần! Nhấn và GIỮ <b>[G]</b> để phủ phục!</span>`;
+    }
+    else if (closestDist < NM_DANGER_DIST) {
+        nmOverlayEl.style.display = "block";
+        nmOverlayEl.style.opacity = "0.90";
+        if (isProstratingBeforeMarchers) {
+            nmWarnTextEl.style.display = "block";
+            nmWarnTextEl.innerHTML =
+                `🙏 Bạn đang phủ phục trước đoàn linh hồn...<br>` +
+                `<span style="font-size:14px;color:#88ff88">GIỮ [G] cho đến khi họ đi qua!</span>`;
+            nmWarnTextEl.style.color = "#88ff88";
+        } else {
+            nmWarnTextEl.style.color = "#ff4500";
+            const now = Date.now();
+            if (!nmJumpActive && (now - nmLastPenaltyTime) > 2000) {
+                nmJumpActive = true;
+                nmLastPenaltyTime = now;
+
+                // Jumpscare riêng của Nightmarchers
+                const nmJs = document.getElementById("nmJumpscare");
+                nmJs.style.display = "flex";
+                setTimeout(() => {
+                    nmJs.style.display = "none";
+                    nmJumpActive = false;
+                }, 1400);
+
+                // Đẩy người chơi ra xa khỏi đoàn
+                const pushDir = new THREE.Vector3()
+                    .subVectors(camera.position, nightmarchers[Math.floor(NM_COUNT / 2)].position)
+                    .setY(0).normalize();
+                camera.position.addScaledVector(pushDir, 32);
+
+                // Phạt tiền – xui xẻo khi nhìn thẳng vào đoàn
+                const penalty = 75000;
+                inventory.money = Math.max(0, inventory.money - penalty);
+                updatePrices();
+                setTimeout(() => {
+                    showActionText(`👁️ BẠN ĐÃ NHÌN VÀO ĐOÀN HUAKA'I PŌ! Linh hồn trừng phạt: -${penalty.toLocaleString()}đ xui xẻo!`);
+                }, 1500);
+            }
+        }
+    }
+    // ── Đoàn đã đi qua hoặc còn rất xa ─────────────────────
+    else {
+        if (nmAlertShown && closestDist > NM_WARN_DIST + 10) {
+            nmAlertShown = false;
+            nmStopDrums();
+        }
+        nmOverlayEl.style.display  = "none";
+        nmWarnTextEl.style.display = "none";
+        nmWarnTextEl.style.color   = "#ff4500"; // Reset màu
+    }
+}
+</script>
+</body>
+</html>

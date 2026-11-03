@@ -1,0 +1,12 @@
+<AMR?=NO>
+AMR4
+@settings=[]
+{ What flie=
+($1[PHOTO<1>,AUDIO<2>,VIDEO<3> or document<4>?]);
+($2[Metadata? Yes<5> or no<6>])}
+{ File
+(#$1=> 4);
+(#$2=> 5)}
+@$1=[ hi tôi là thương lái chuyên thu mua lúa…]
+@$2=[(Filename: abc);(time: 1/1/1980);(author: Tom);(location: usa);(planning-date: 1/1/1980)]
+//$=question #=Answer the question @=Content

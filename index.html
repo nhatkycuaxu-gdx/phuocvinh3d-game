@@ -1,0 +1,3740 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="mẹo viết code nhanh(dành cho dev)" content=" Copy 1 dòng tương tự như `</abc>…<abc>` sau đó dán ở dưới hoặc trên sau đó đổi tên thay đổi (giảm thời gian xuống còn 45-80%!) cũng là ví do rất nhiều code tương tự như nhau. (áp dụng gần như tất cả mọi thứ) [có 1 dòng cde mẫu cực chuẩn tại file .md nhưng chỉ có trong dự án của chúng tôi.]">
+<meta name="game-name" content="Phước Vinh 3D">
+<meta name="᪳" content="᪽">
+<meta name="author" content="Thiên">
+<meta name="development-tool" content="A Code,Code Studio">
+<meta name="planning-date" content="2026-07-11">
+<meta name="location" content="Phước Vinh, Tây Ninh, Việt Nam">
+<meta name="project-version" content="2.0.0">
+<meta name="project-status" content="completed">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phước Vinh 3D</title>
+<link rel="icon" type="image/jpeg" href="/photo/favicon.jpg">
+<style>
+    html, body {
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        background: #87ceeb; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    canvas { display: block; }
+    #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+    #crosshair {
+        position: absolute; top: 50%; left: 50%;
+        width: 8px; height: 8px; background: rgba(255,255,255,0.9);
+        border: 1px solid #000; border-radius: 50%; transform: translate(-50%, -50%);
+        pointer-events: none; display: none;}
+    #hud {
+        position: absolute; top: 20px; right: 20px; padding: 15px 25px;
+        background: rgba(0,0,0,0.85); color: #fff; border-radius: 10px;
+        border: 2px solid #ffeb3b; font-size: 15px; font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: none; z-index: 100;
+        min-width: 220px;}
+    .hud-item { margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .hud-val { color: #4caf50; }
+    .hud-val-money { color: #ffeb3b; }
+    .hud-val-red { color: #ff5722; }
+    #loading {
+        position: absolute; top: 20px; left: 20px; padding: 15px 25px;
+        background: rgba(0,0,0,0.8); color: #fff; border-radius: 8px; z-index: 100;}
+    #loading h3 { margin: 0 0 8px 0; color: #4caf50; }
+    #deviceSelect {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.9); z-index: 999; pointer-events: auto;}
+    #deviceBox {
+        background: #1e1e1e; padding: 30px; border-radius: 12px; width: 360px; text-align: center;
+        color: white; border: 1px solid #444;}
+    #deviceBox h2 { margin-top: 0; color: #ffeb3b; }
+    #deviceBox p { color: #ccc; margin-bottom: 20px; font-size: 13px; text-align: left; line-height: 1.5; }
+    .btn {
+        width: 100%; padding: 14px; margin-top: 12px; border: none; border-radius: 8px;
+        cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s;}
+    .desktop { background: #4caf50; color: white; }
+    .mobile { background: #2196f3; color: white; }
+    #joystick-zone {
+        position: absolute; bottom: 30px; left: 30px; width: 140px; height: 140px;
+        background: rgba(255,255,255,0.1); border-radius: 50%;
+        display: none; pointer-events: auto; border: 2px solid rgba(255,255,255,0.3);}
+    #stick {
+        position: absolute; left: 45px; top: 45px; width: 50px; height: 50px;
+        border-radius: 50%; background: rgba(255,255,255,0.6);}
+    #look-zone {
+        position: absolute; top: 0; right: 0; width: 50%; height: 100%;
+        display: none; pointer-events: auto; touch-action: none;}
+    #interactBtn {
+        position: absolute; bottom: 40px; right: 40px; width: 85px; height: 85px;
+        background: rgba(255, 152, 0, 0.95); color: white; border-radius: 50%;
+        border: 3px solid #fff; font-size: 13px; font-weight: bold; display: none;
+        pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 50;}
+    #attackBtn {
+        position: absolute; bottom: 140px; right: 40px; width: 70px; height: 70px;
+        background: rgba(244, 67, 54, 0.95); color: white; border-radius: 50%;
+        border: 2px solid #fff; font-size: 12px; font-weight: bold; display: none;
+        pointer-events: auto; z-index: 50;}
+    #plantBtn {
+        position: absolute; bottom: 240px; right: 40px; width: 70px; height: 70px;
+        background: rgba(76, 175, 80, 0.95); color: white; border-radius: 50%;
+        border: 2px solid #fff; font-size: 12px; font-weight: bold; display: none;
+        pointer-events: auto; z-index: 50;}
+
+
+    #nmOverlay {
+        position: absolute; inset: 0; z-index: 8900; pointer-events: none;
+        background: radial-gradient(ellipse at center, transparent 30%, rgba(30,0,60,0.85) 100%);
+        display: none; transition: opacity 0.5s;}
+    #nmWarnText {
+        position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+        color: #ff4500; font-size: 20px; font-weight: bold;
+        text-shadow: 0 0 20px #ff6600, 0 0 40px #ff3300, 2px 2px 0 #000;
+        text-align: center; pointer-events: none; display: none; z-index: 8901;
+        line-height: 1.9; max-width: 90%;
+        animation: nmFlicker 1.5s infinite;}
+    #nmJumpscare {
+        position: absolute; inset: 0; background: rgba(70,0,110,0.6);
+        display: none; z-index: 9998; pointer-events: none;
+        align-items: center; justify-content: center; color: white;
+        font-size: 62px; font-weight: bold; text-shadow: 5px 5px 0 #000, 0 0 30px #aa00ff;
+        flex-direction: column; gap: 12px;}
+    @keyframes nmFlicker {
+        0%, 100% { opacity: 1; } 45% { opacity: 0.7; } 50% { opacity: 1; } 75% { opacity: 0.85; }}
+    #instructions {
+        position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+        color: white; background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 20px;
+        font-size: 13px; display: none; pointer-events: none; text-align: center;}
+    #actionText {
+        position: absolute; top: 55%; left: 50%; transform: translateX(-50%);
+        color: #fff; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 2px #000;
+        background: rgba(0,0,0,0.6); padding: 8px 16px; border-radius: 6px;
+        display: none; pointer-events: none; z-index: 20; text-align: center; max-width: 80%;}
+    #jumpscare {
+        position: absolute; inset: 0; background: rgba(255,0,0,0.4);
+        display: none; z-index: 9999; pointer-events: none;
+        align-items: center; justify-content: center; color: white;
+        font-size: 80px; font-weight: bold; text-shadow: 5px 5px 0 #000;}
+    #debugPanel {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #00ff00;
+        font-family: monospace;
+        font-size: 14px;
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid #00ff00;
+        z-index: 9999;
+        pointer-events: none;
+        display: none;}
+    .debug-item { margin-bottom: 5px; }
+    .debug-label { color: #fff; font-weight: bold; }
+    .checkbox-container {
+        display: block;
+        margin: 15px 0;
+        color: #4caf50;
+        font-size: 14px;
+        cursor: pointer;
+        text-align: center;}
+    #achievement-popup {
+        position: absolute;
+        bottom: 30px;
+        left: 30px;
+        background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(40, 40, 60, 0.95));
+        border: 2px solid #ffd700;
+        border-radius: 12px;
+        color: #fff;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.7);
+        z-index: 9990;
+        transform: translateX(-120%);
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: none;
+        max-width: 320px;}
+    #achievement-popup.show {
+        transform: translateX(0);}
+    .ach-icon {
+        font-size: 36px;
+        background: rgba(255, 215, 0, 0.2);
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid #ffd700;
+        flex-shrink: 0;}
+    .ach-text h4 {
+        margin: 0 0 4px 0;
+        color: #ffd700;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;}
+    .ach-text p {
+        margin: 0;
+        color: #e0e0e0;
+        font-size: 13px;
+        line-height: 1.3;}
+    .ach-reward {
+        margin-top: 4px;
+        color: #4caf50;
+        font-weight: bold;
+        font-size: 12px;}
+#music-shop {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(20, 20, 30, 0.95); border: 2px solid #00bcd4; border-radius: 10px;
+    padding: 20px; color: white; display: none; z-index: 1000; min-width: 300px;}
+#music-shop h3 { margin-top: 0; color: #00bcd4; text-align: center; }
+#song-list {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 5px;}
+.song-btn {
+    display: block; width: 100%; padding: 10px; margin-bottom: 8px;
+    background: #333; color: white; border: 1px solid #555; cursor: pointer; border-radius: 5px;}
+.song-btn:hover { background: #00bcd4; color: black; font-weight: bold; }
+#close-shop { background: #f44336; margin-top: 15px; }
+#settingsBtn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 5px 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 9px;
+    cursor: pointer;
+    z-index: 9990;
+    font-weight: bold;
+    display: none;}
+#settingsBtn:hover { background: #4caf50; }
+#settingsModal {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    pointer-events: auto;}
+.settings-content {
+    background: #1e1e1e;
+    padding: 25px;
+    border-radius: 12px;
+    color: white;
+    min-width: 320px;
+    border: 1px solid #444;
+    text-align: left;
+    max-height: 85vh;
+    overflow-y: auto;}
+.settings-content h3 {
+    color: #ffeb3b;
+    margin-top: 0;
+    text-align: center;}
+.settings-content label {
+    display: block;
+    margin: 15px 0;
+    font-size: 15px;}
+.settings-content input[type="range"] {
+    width: 100%;
+    margin-top: 8px;}
+#closeSettingsBtn {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 15px;
+    font-size: 16px;}
+#closeSettingsBtn:hover { background: #d32f2f; }
+#chatBtn {
+    position: absolute;
+    top: 60px;
+    left: 20px;
+    padding: 5px 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 9px;
+    cursor: pointer;
+    z-index: 9990;
+    font-weight: bold;
+    display: none;}
+#chatBtn:hover { background: #00bcd4; }
+#chatBox {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    width: 280px;
+    background: rgba(20, 20, 30, 0.85);
+    border: 2px solid #00bcd4;
+    border-radius: 8px;
+    display: none; 
+    flex-direction: column;
+    z-index: 9990;
+    padding: 12px;
+    pointer-events: auto;}
+#chatMessages {
+    height: 150px;
+    overflow-y: auto;
+    color: white;
+    margin-bottom: 10px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;}
+#chatInput { padding: 8px; border-radius: 4px; border: none; outline: none; background: #fff; color: #000; }
+#sendChatBtn { padding: 8px; margin-top: 5px; background: #00bcd4; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: #fff;}
+#sendChatBtn:hover { background: #008ba3; }
+.multi-panel { margin-top: 15px; border-top: 1px solid #444; padding-top: 15px; }
+.multi-input { flex: 1; padding: 12px; border-radius: 5px; border: none; outline:none; }
+
+.connection-settings{margin-top:16px;padding:12px;border:1px solid #444;border-radius:10px;background:#151515}
+.connection-settings h4{margin:0 0 5px;color:#00bcd4;font-size:15px}
+.connection-help{margin:0 0 10px;color:#aaa;font-size:11px}
+#hardwareConnectionButtons{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#hardwareConnectionButtons button{position:static!important;width:100%!important;padding:8px!important;border:0;border-radius:6px;color:#fff;cursor:pointer}
+#connectionStatusList [id^="status-"]{position:static!important;margin-top:5px;padding:5px 7px!important;font-size:11px!important}
+#net-shop {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);background: rgba(20, 20, 30, 0.95); border: 2px solid #00bcd4; border-radius: 10px;padding: 20px; color: white; display: none; z-index: 1000; min-width: 320px;}
+#net-shop h3 { margin-top: 0; color: #00bcd4; text-align: center; }
+#net-game-list {max-height: 250px;overflow-y: auto;padding-right: 5px;}.net-game-btn {display: block; width: 100%; padding: 10px; margin-bottom: 8px;background: #333; color: white; border: 1px solid #555; cursor: pointer; border-radius: 5px;text-align: left;}.net-game-btn:hover { background: #00bcd4; color: black; font-weight: bold; }
+#close-net-shop { background: #f44336; margin-top: 15px; width: 100%; padding: 10px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: bold; }
+#currency-shop {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(20, 20, 30, 0.95); border: 2px solid #ff9800; border-radius: 10px;
+    padding: 20px; color: white; display: none; z-index: 1000; min-width: 360px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+#currency-shop h3 { margin-top: 0; color: #ff9800; text-align: center; }
+#currency-list {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-top: 10px;
+}
+.currency-item-btn {
+    display: block; width: 100%; padding: 10px; margin-bottom: 8px;
+    background: #333; color: white; border: 1px solid #555; cursor: pointer; border-radius: 5px;
+    text-align: left; transition: 0.2s;
+}
+.currency-item-btn:hover { background: #ff9800; color: black; font-weight: bold; }
+#close-currency-shop { background: #f44336; margin-top: 15px; width: 100%; padding: 10px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: bold; }
+</style>
+<script>
+(function checkCompatibility() {function getWebGLStatus() {try {var canvas = document.createElement('canvas');return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));} catch (e) {return false;}}
+function getJSStatus() {try {eval("const a = () => {}; class Test {}");return true;} catch (e) {return false;}}
+var isWebGLSupported = getWebGLStatus();
+var isJSModernSupported = getJSStatus();
+var ua = navigator.userAgent;
+var ThietBi = "Thiết bị của bạn";
+var ViDo = [];
+if (/Viera|SmartTV|Tizen|webOS|NetCast|TV/i.test(ua)) {if (/Viera/i.test(ua)) ThietBi = "Smart TV Panasonic (Viera)";else if (/Tizen/i.test(ua)) ThietBi = "Smart TV Samsung";else if (/webOS/i.test(ua)) ThietBi = "Smart TV LG";else ThietBi = "Smart TV";} else {ThietBi = "Trình duyệt hiện tại";}if (!isWebGLSupported) {ViDo.push("Không hỗ trợ đồ họa WebGL (Three.js)");}if (!isJSModernSupported) {ViDo.push("Trình duyệt quá cũ, không hỗ trợ JavaScript (ES6+)");}if (ViDo.length > 0) {var viDoText = ViDo.join(" và ");window.addEventListener('DOMContentLoaded', function() {document.body.innerHTML = `<div style="background:#0d1117; color:#c9d1d9; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family: monospace, sans-serif; text-align:center; padding:20px; box-sizing:border-box;"><div style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:30px; max-width:600px; width:100%;"><h2 style="color:#f85149; margin-top:0; font-size:22px;">${ThietBi} Không Tương Thích</h2><p style="font-size:16px; color:#8b949e; margin:20px 0; line-height:1.6;">Trang web không thể khởi chạy vì <b style="color:#e6edf3;">${viDoText}</b>.</p><div style="background:#0d1117; border-left:4px solid #f85149; padding:12px; text-align:left; margin-bottom:20px; font-size:13px; color:#8b949e; overflow-x:auto;"><code>User-Agent: ${ua}</code></div><p style="color:#58a6ff; font-size:14px; margin-bottom:0;">💡 Hãy Thử Đổi Trình duyệt/Thiết bị khác để trải nghiệm.</p></div></div>`;});}})();
+</script>
+<noscript>
+<div style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; color:#fff; z-index:9999; display:flex; align-items:center; justify-content:center; text-align:center; font-family:sans-serif;">
+<div><h1>LỖI TRUY CẬP</h1><p>Vui lòng bật JavaScript để xem nội dung trang web này.(nếu bạn không chủ động tắt hãy kiểm tra trình duyệt của bạn có hỡ trợ không)</p></div></div>
+</noscript>
+</head>
+<body>
+<audio id="bgMusic" src="audio/background_music-game.ogg" loop preload="auto"></audio>
+<div id="loading">
+    <h3>Phước Vinh 3D</h3>
+    <div id="loadText">Đang đồng bộ bản đồ…</div></div>
+<div id="jumpscare">ÔNG BA ĐỒNG!!</div>
+<div id="nmOverlay"></div>
+<div id="nmWarnText"></div>
+<div id="debugPanel">
+    <div class="debug-item"><span class="debug-label">Trạng thái:</span> <span id="debugStatus">Khởi tạo...</span></div>
+    <div class="debug-item"><span class="debug-label">FPS:</span> <span id="debugFPS">0</span></div>
+    <div class="debug-item"><span class="debug-label">Tọa độ:</span> <span id="debugCoords">X: 0.00 | Y: 0.00 | Z: 0.00</span></div></div>
+<div id="hud">
+    <div class="hud-item"><span>🌾 Hạt giống / Lúa:</span> <span class="hud-val"><span id="seedCount">5</span> / <span id="riceCount">0</span> kg</span></div>
+<div class="hud-item"><span>🥜 Hạt điều:</span> <span class="hud-val" id="cashewCount">0</span> kg</div>
+
+<div class="hud-item"><span>🐟 Cá:</span> <span class="hud-val" id="fishCount">0</span>con</div>
+    <div class="hud-item"><span>🍜 Mì gói:</span> <span class="hud-val" id="noodleCount">0</span> gói</div>
+    <div class="hud-item"><span>🍲 Món ăn:</span> <span class="hud-val" id="cookedMealCount">0</span> suất</div>
+    <div class="hud-item"><span>📺 Đồ gia dụng:</span> <span class="hud-val" id="applianceCount">10</span> món</div>
+    <div class="hud-item"><span>💵 Tiền:</span> <span class="hud-val-money"><span id="moneyCount">100000</span> đ</span></div>
+    <div class="hud-item"><span>📉 Nợ chủ nợ:</span> <span class="hud-val-red"><span id="debtCount">20000000</span> ₫</span></div>
+    <div class="hud-item"><span>📊 Lạm phát:</span> <span class="hud-val-red" id="inflationText">100%</span></div>
+    <div class="hud-item"><span>📅 Ngày:</span> <span style="color: #00ffff;" id="dayText">1</span></div>
+    <div class="hud-item"><span>🕐 Thời điểm:</span> <span style="color:#ffd54f;" id="dayPhaseText">☀️ Ban ngày</span></div></div>
+<div id="deviceSelect">
+    <div id="deviceBox">
+        <h2>Phước Vinh 3D</h2>
+      <p>Ừm nó chỉ là game bình thường</p>
+         <label class="checkbox-container">
+<input type="checkbox" id="showDebugToggle"> Bật thông số kỹ thuật (FPS, Tọa độ)
+</label>
+<div class="multi-panel">
+    <h3 style="margin: 0 0 10px 0; color: #00bcd4; font-size: 16px;">Chế độ Nhiều Người</h3>
+    <button id="hostBtn" class="btn desktop" style="background: #0080c8;">1. Tạo mã phòng</button>
+    <p id="roomCodeDisplay" style="display:none; color: #4caf50; font-weight: bold; margin: 10px 0; font-size: 14px; background: #222; padding: 8px; border-radius: 4px;"></p>
+    <div style="display: flex; gap: 5px; margin-top: 10px;">
+        <input type="text" id="joinCodeInput" class="multi-input" placeholder="Nhập mã bạn bè…">
+        <button id="joinBtn" class="btn desktop" style="background: #ff9800; margin-top: 0; width: auto;">2. Vào phòng</button>
+    </div>
+</div>
+        <button id="desktopBtn" class="btn desktop">Chơi Máy tính (Phím/Chuột)</button>
+        <button id="mobileBtn" class="btn mobile">Chơi Điện thoại</button>
+    </div>
+</div>
+<div id="achievement-popup">
+    <div class="ach-icon" id="achIcon">🏆</div>
+    <div class="ach-text">
+        <h4 id="achTitle">Thành tựu mới!</h4>
+        <p id="achDesc">Mô tả chi tiết thành tựu...</p>
+        <div class="ach-reward" id="achRewardText">+50,000 đ</div></div></div>
+<div id="ui-layer">
+    <div id="crosshair"></div>
+    <div id="instructions">WASD: Đi | E: Tương tác | F: Đánh | P: Gieo</div>
+    <div id="actionText">Nhấn E để nói chuyện</div></div>
+<div id="music-shop">
+    <h3>Tiệm Băng Đĩa Nhạc</h3>
+    <div id="song-list"></div>
+    <button id="close-shop" class="song-btn">Đóng cửa hàng</button>
+</div>
+<button id="settingsBtn">⚙️</button>
+<div id="settingsModal">
+    <div class="settings-content">
+        <h3>Cài đặt Hệ thống</h3>
+        <label>
+            <input type="checkbox" id="settingDebugToggle"> Hiển thị thông số kỹ thuật (FPS, Tọa độ)
+        </label>
+        <label>
+            <input type="checkbox" id="settingThirdPerson"> Góc nhìn thứ ba
+        </label>
+        <label>
+            Âm lượng nhạc nền: <span id="volValue">45%</span>
+            <input type="range" id="settingVolume" min="0" max="1" step="0.05" value="0.45">
+        </label>
+        <div id="connectionSettings" class="connection-settings">
+            <h4>Kết nối mạng (P2P)</h4>
+            
+            <div id="hardwareConnectionButtons"></div>
+            <div id="multiplayerSettings"></div>
+            <div id="connectionStatusList"></div>
+        </div>
+        <div id="modPanel" class="connection-settings">
+            <h4>Quản Lý Font</h4>
+            <div style="margin-bottom: 12px;">
+                <p class="connection-help">Chỉ nhận file font</p>
+                <div style="display: flex; gap: 5px;">
+                    <input type="file" id="modFileInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #222; color: #fff;">
+                    <button id="uploadModBtn" style="padding: 8px 15px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">➕ Thêm</button>
+                </div>
+                <div id="modUploadStatus" style="color: #4caf50; font-size: 11px; margin-top: 5px;"></div>
+            </div>
+            <div id="modsList" style="max-height: 200px; overflow-y: auto; background: #0a0a0a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
+                <div style="color: #888; text-align: center; padding: 20px; font-size: 12px;">Chưa có mod nào</div>
+            </div>
+        </div>
+        <button id="closeSettingsBtn">Đóng</button></div></div>
+<div id="joystick-zone"><div id="stick"></div></div>
+<div id="look-zone"></div>
+<button id="interactBtn">Tương tác</button>
+<button id="attackBtn">Đánh</button>
+<button id="plantBtn">Gieo</button>
+<button id="chatBtn">💬</button>
+<div id="chatBox">
+<div id="chatMessages"></div>
+<input type="text" id="chatInput" placeholder="Nhập tin nhắn…">
+<button id="sendChatBtn">Gửi tin nhắn</button></div>
+<div id="net-shop">
+<h3>Danh Sách Game</h3>
+<div id="net-game-list"></div>
+<button id="close-net-shop">Đóng máy</button></div>
+<div id="pcScreenModal" style="position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 99999; pointer-events: auto;">
+    <div style="width: 800px; height: 500px; background: #1e1e2e; border: 4px solid #333; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+        <div style="background: #11111b; color: #cdd6f4; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #45475a;">
+            <span id="miniGameTitle">Đang chơi game…</span>
+            <button onclick="closeMiniGame()" style="background: #f38ba8; color: #11111b; border: none; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; cursor: pointer;">X</button>
+        </div>
+        <div style="flex: 1; background: #000; position: relative;">
+            <iframe id="miniGameIframe" style="width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+    </div>
+</div>
+<div id="currency-shop">
+    <h3>💱 Quầy Đổi Ngoại Tệ Nội Bộ Xã Phước Vinh</h3>
+    <p style="font-size: 11px; color: #aaa; text-align: center; margin: 5px 0;">Chọn loại ngoại tệ muốn giao dịch (Mua vào / Bán ra)</p>
+    <div id="currency-list"></div>
+    <div style="margin-top: 12px; background: #111; padding: 10px; border-radius: 6px; font-size: 13px; border: 1px dashed #444;" id="walletSummary">
+        Ví của bạn: Đang tải...
+    </div>
+    <button id="close-currency-shop">Đóng quầy</button>
+</div>
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161/build/three.module.js";
+import Peer from "https://esm.sh/peerjs@1.5.5";
+//CẤU HÌNH HỆ THỐNG
+const CONFIG = {
+    speed: 0.25,
+    lookSpeedDesktop: 0.0012,
+    lookSpeedMobile: 0.0035,
+    playerHeight: 4,
+    mapLimit: 7200};
+const inventory = {seeds: 5, rice: 20, cashew: 0, fish: 15, noodles: 24, appliances: 5, cookedMeals: 0, money: 1000000, debt: 20000000};
+let economy = {day: 1,inflation: 1.0,basePrice: { seed: 5000, rice: 15000,cashew: 45000, fish: 30000, noodle: 7000, appliance: 120000 },currentPrice: {}};
+window.inventory = inventory;
+window.economy = economy;
+let interactables = [];
+let showDebug = false;
+let thirdPersonMode = false;
+let playerPos = new THREE.Vector3(0, 0, 80);
+let playerMesh = null;
+const TP_DISTANCE = 12;
+const TP_HEIGHT = 7;
+let frameCount = 0;
+let lastFpsTime = performance.now();
+const debugPanel = document.getElementById("debugPanel");
+const debugStatus = document.getElementById("debugStatus");
+const debugFPS = document.getElementById("debugFPS");
+const debugCoords = document.getElementById("debugCoords");
+let colliderBoxes = [];
+let policeNPCs = [];
+let journalists = [];
+let targetNPC = null;
+let decorWalkers = [];
+let decorVehicles = [];
+let scene, camera, renderer;
+let animatedCulms = [];
+let selectedDevice = null;
+let pitch = 0, yaw = Math.PI;
+let moveF = false, moveB = false, moveL = false, moveR = false;
+let joyX = 0, joyY = 0;
+let lookTouchId = null, lastLookX = 0, lastLookY = 0;
+let crimeAlert = false;
+let copSpeed = 0.45;
+let baDongNPC = null;
+let baDongAngle = 0;
+const NM_COUNT = 7;
+const nightmarchers = [];
+let nmGroup = null;
+let nmProgress = 0;
+let nmDir = 1;
+let nmActive = false;
+let nmTorches = [];
+const NM_PATH_Z  = -226;
+const NM_X_START = -189;
+const NM_X_END   =  185;
+const NM_SPEED   = 0.00049;
+const NM_WARN_DIST   = 60;
+const NM_DANGER_DIST = 40;
+const uiCrosshair = document.getElementById("crosshair");
+const uiInstruct = document.getElementById("instructions");
+const uiAction = document.getElementById("actionText");
+const hud = document.getElementById("hud")
+const btnInteract = document.getElementById("interactBtn");
+const btnAttack = document.getElementById("attackBtn");
+const btnPlant = document.getElementById("plantBtn");
+document.getElementById("desktopBtn").onclick = () => startGame("desktop");
+document.getElementById("mobileBtn").onclick = () => startGame("mobile");
+const currencyList = [
+    { code: 'USD', name: 'Đô La Mỹ (USD)', symbol: '$', buyRate: 26000, sellRate: 25000 },
+    { code: 'EUR', name: 'Euro (EUR)', symbol: '€', buyRate: 28000, sellRate: 27000 },
+    { code: 'GBP', name: 'Bảng Anh (GBP)', symbol: '£', buyRate: 32000, sellRate: 31000 },
+    { code: 'JPY', name: 'Yên Nhật (JPY)', symbol: '¥', buyRate: 170, sellRate: 160 },
+    { code: 'RUB', name: 'Rúp Nga (RUB)', symbol: '₽', buyRate: 280, sellRate: 260 }];
+if (!inventory.foreignWallet) {
+    inventory.foreignWallet = { USD: 0, EUR: 0, GBP: 0, JPY: 0, RUB: 0 };
+}
+
+const currencyShopDiv = document.getElementById("currency-shop");
+const currencyListDiv = document.getElementById("currency-list");
+function openCurrencyShop() {
+    if (document.pointerLockElement) document.exitPointerLock();
+    currencyListDiv.innerHTML = "";
+
+    currencyList.forEach(curr => {
+        let itemDiv = document.createElement("div");
+        itemDiv.style.marginBottom = "10px";
+        itemDiv.innerHTML = `
+            <div style="font-weight: bold; color: #ffeb3b; font-size: 13px; margin-bottom: 4px;">${curr.name}</div>
+            <div style="display: flex; gap: 5px;">
+                <button class="currency-item-btn" style="flex:1; margin:0; text-align:center; background:#2e7d32;" onclick="tradeCurrency('${curr.code}', 'buy')">
+                    Mua (-${curr.buyRate.toLocaleString()}đ)
+                </button>
+                <button class="currency-item-btn" style="flex:1; margin:0; text-align:center; background:#c62828;" onclick="tradeCurrency('${curr.code}', 'sell')">
+                    Bán (+${curr.sellRate.toLocaleString()}đ)
+                </button>
+            </div>
+        `;
+        currencyListDiv.appendChild(itemDiv);
+    });
+
+    updateWalletDisplay();
+    currencyShopDiv.style.display = "block";
+}
+
+document.getElementById("close-currency-shop").onclick = () => {
+    currencyShopDiv.style.display = "none";
+};
+window.tradeCurrency = function(code, action) {
+    const curr = currencyList.find(c => c.code === code);
+    if (!curr) return;
+
+    if (action === 'buy') {
+        // Dùng VND mua ngoại tệ
+        if (inventory.money >= curr.buyRate) {
+            inventory.money -= curr.buyRate;
+            inventory.foreignWallet[code] += 1;
+            showActionText(`💱 Đã mua 1${curr.symbol} với giá ${curr.buyRate.toLocaleString()} đ!`);
+        } else {
+            showActionText(`❌ Không đủ tiền VND để mua 1${curr.symbol}! Cần ${curr.buyRate.toLocaleString()} đ.`);
+        }
+    } else if (action === 'sell') {
+        // Bán ngoại tệ lấy lại VND
+        if (inventory.foreignWallet[code] > 0) {
+            inventory.foreignWallet[code] -= 1;
+            inventory.money += curr.sellRate;
+            showActionText(`💱 Đã bán 1${curr.symbol} thu về ${curr.sellRate.toLocaleString()} đ!`);
+        } else {
+            showActionText(`❌ Bạn không có sẵn ${curr.symbol} nào trong ví để bán!`);
+        }
+    }
+
+    updatePrices();
+    updateWalletDisplay();
+};
+
+function updateWalletDisplay() {
+    const w = inventory.foreignWallet;
+    const summary = document.getElementById("walletSummary");
+    if (summary) {
+        summary.innerHTML = `<b>Ví Ngoại Tệ Của Bạn:</b><br>
+        💵 USD: ${w.USD}$ | 💶 EUR: ${w.EUR}€ | 💷 GBP: ${w.GBP}£<br>
+        💴 JPY: ${w.JPY}¥ | 🇷🇺 RUB: ${w.RUB}₽`;
+    }
+}
+
+function initModSystem() {
+    const modFileInput = document.getElementById("modFileInput");
+    const uploadModBtn = document.getElementById("uploadModBtn");
+    const modsList = document.getElementById("modsList");
+const modUploadStatus = document.getElementById("modUploadStatus");
+    uploadModBtn.onclick = async () => {
+        const file = modFileInput.files[0];
+        if (!file) {
+            modUploadStatus.textContent = 'Chọn file!';
+            return;
+        }
+        const result = await window.modSystem.loadMod(file);
+        modUploadStatus.textContent = result.message;
+        modFileInput.value = '';
+        setTimeout(() => { updateModsList(); modUploadStatus.textContent = ''; }, 1000);
+    };
+
+    function updateModsList() {
+        const mods = window.modSystem.getModsList();
+        if (mods.length === 0) { 
+            modsList.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">Chưa có mod nào</div>'; 
+            return; 
+        }
+        modsList.innerHTML = mods.map(mod => `
+            <div class="mod-item">
+                <div class="mod-item-info">
+                    <div class="mod-item-name">${mod.name}</div>
+                    <div class="mod-item-version">v${mod.version}</div>
+                    <div class="mod-item-type">${mod.type.toUpperCase()}</div>
+                </div>
+                <div class="mod-item-actions">
+                    <button class="mod-toggle ${mod.enabled ? 'enabled' : ''}" onclick="toggleMod('${mod.id}')">
+                        ${mod.enabled ? '✓ Bật' : '✕ Tắt'}
+                    </button>
+                    <button class="mod-delete" onclick="uninstallMod('${mod.id}')">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.toggleMod = (modId) => {
+        const mod = window.modSystem.mods.get(modId);
+        if (mod.enabled) { window.modSystem.disableMod(modId); } 
+        else { window.modSystem.enableMod(modId); }
+        updateModsList();
+    };
+
+    window.uninstallMod = (modId) => {
+        if (confirm('Xóa mod?')) { 
+            window.modSystem.uninstallMod(modId); 
+            updateModsList(); 
+        }
+    };
+
+    updateModsList();
+    console.log('Mod System UI sẵn sàng!');
+}
+
+function startGame(device) {
+    selectedDevice = device;
+    document.getElementById("deviceSelect").style.display = "none";
+    hud.style.display = "block";
+        document.getElementById("settingsBtn").style.display = "block";
+
+    updatePrices();
+    showDebug = document.getElementById("showDebugToggle").checked;
+    if (showDebug) {
+        debugPanel.style.display = "block";
+        debugStatus.innerText = "Đang chơi (" + (device === "desktop" ? "PC" : "Mobile") + ")";
+    }
+    const bgMusic = document.getElementById("bgMusic");
+    bgMusic.volume = 0.45;
+    bgMusic.play().catch(() => {});
+    if (device === "desktop") {
+        uiCrosshair.style.display = "block";
+        uiInstruct.style.display = "block";
+        setupDesktopControls();
+    } else {
+        uiCrosshair.style.display = "block";
+        document.getElementById("joystick-zone").style.display = "block";
+        document.getElementById("look-zone").style.display = "block";
+        btnInteract.style.display = "block";
+        btnAttack.style.display = "block";
+        btnPlant.style.display = "block";
+        setupMobileControls();
+    }
+    initThreeJS();
+    document.getElementById("chatBtn").style.display = "block";
+
+    // Vòng lặp thời gian kinh tế: 
+    setInterval(nextEconomicDay, 600000);
+}
+
+function updatePrices() {
+    document.getElementById("inflationText").innerText = Math.round(economy.inflation * 100) + "%";
+    document.getElementById("dayText").innerText = economy.day;
+    document.getElementById("seedCount").innerText = inventory.seeds;
+    document.getElementById("riceCount").innerText = inventory.rice;
+if (document.getElementById("cashewCount")) {document.getElementById("cashewCount").innerText = inventory.cashew.toFixed(1);document.getElementById("cashewCount").closest(".hud-item").style.display = inventory.cashew > 0 ? "flex" : "none";}
+    document.getElementById("fishCount").innerText = inventory.fish;
+    document.getElementById("noodleCount").innerText = inventory.noodles;
+    document.getElementById("cookedMealCount").innerText = inventory.cookedMeals;
+    document.getElementById("applianceCount").innerText = inventory.appliances;
+    document.getElementById("moneyCount").innerText = inventory.money.toLocaleString();
+    document.getElementById("debtCount").innerText = inventory.debt.toLocaleString();
+    let hideSeedRice = (inventory.seeds === 0 && inventory.rice === 0);
+    document.getElementById("seedCount").closest(".hud-item").style.display = hideSeedRice ? "none" : "flex";
+    document.getElementById("fishCount").closest(".hud-item").style.display = inventory.fish > 0 ? "flex" : "none";
+document.getElementById("cookedMealCount").closest(".hud-item").style.display = inventory.cookedMeals > 0 ? "flex" : "none";
+    document.getElementById("noodleCount").closest(".hud-item").style.display = inventory.noodles > 0 ? "flex" : "none";
+    document.getElementById("applianceCount").closest(".hud-item").style.display = inventory.appliances > 0 ? "flex" : "none";
+document.getElementById("debtCount").closest(".hud-item").style.display = inventory.debt > 0 ? "flex" : "none";}
+function randomGaussian(mean = 0, stdev = 1) {
+    let u1 = 1 - Math.random();
+    let u2 = 1 - Math.random();
+    let randStd = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+return mean + stdev * randStd;}
+let inflationRate = economy.inflation || 0;
+let deflationRate = economy.deflation || 0;
+let economyFactor = Math.max((1 + inflationRate) - deflationRate, 0.001);
+for (let key in economy.basePrice) {
+let logFluctuation = randomGaussian(0, 0.35);
+    let fluctuation = Math.exp(logFluctuation);
+    fluctuation = Math.min(Math.max(fluctuation, -700), 2000.0);
+    economy.currentPrice[key] = Math.round(economy.basePrice[key] * fluctuation * economyFactor);}
+function nextEconomicDay() {
+    economy.day++;
+    economy.inflation += 1.5;
+    updatePrices();
+    showActionText(`📅 Bước sang ngày thứ ${economy.day}! Giá cả thị trường đã biến động.`);
+    checkGovtFoodAid();
+    if (isMultiplayer && p2pConn && p2pConn.open) {
+        p2pConn.send({ type: 'env', inflation: economy.inflation, day: economy.day });}}
+const netGamePlaylist = [
+    { id: 1, file: 'minigame/game_0.html', name: 'Mini Game 0 - Phiêu Lưu', price: 5000 },
+    { id: 2, file: 'minigame/game_1.html', name: 'Mini Game 1 - Thử Thách', price: 5000 }
+];
+
+const netShopDiv = document.getElementById("net-shop");
+const netGameListDiv = document.getElementById("net-game-list");
+const pcScreenModal = document.getElementById("pcScreenModal");
+const miniGameIframe = document.getElementById("miniGameIframe");
+const miniGameTitle = document.getElementById("miniGameTitle");
+function openInternetNetShop() {
+    if (document.pointerLockElement) document.exitPointerLock();
+    netGameListDiv.innerHTML = "";
+    netGamePlaylist.forEach(game => {
+        let btn = document.createElement("button");
+        btn.className = "net-game-btn";
+        btn.innerHTML = `<b>${game.name}</b> <span style="float: right; color: #ffeb3b;">${game.price.toLocaleString()} đ</span>`;
+        btn.onclick = () => launchNetGame(game);
+        netGameListDiv.appendChild(btn);
+    });
+    
+    netShopDiv.style.display = "block";
+}
+
+document.getElementById("close-net-shop").onclick = () => {
+    netShopDiv.style.display = "none";
+};
+
+// Chạy game qua đường dẫn file chỉ định
+function launchNetGame(game) {
+    if (inventory.money >= game.price) {
+        inventory.money -= game.price;
+        updatePrices();
+        
+        netShopDiv.style.display = "none";
+        miniGameTitle.innerText = game.name;
+        miniGameIframe.src = game.file; // Gọi qua đường dẫn dạng minigame/game1.html
+        pcScreenModal.style.display = "flex";
+        
+        showActionText(`🖥️ Đã mở file: ${game.name}. Chúc bạn chơi vui vẻ!`);
+    } else {
+        showActionText(`❌ Không đủ tiền chơi ${game.name}! Cần ${game.price.toLocaleString()} đ.`);
+    }
+}
+window.closeMiniGame = function() {
+    pcScreenModal.style.display = "none";
+    miniGameIframe.src = "about:blank";
+};
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && pcScreenModal.style.display === "flex") {
+        window.closeMiniGame();
+    }
+});
+
+function updateDebugInfo() {
+    if (!showDebug) return;
+    frameCount++;
+    const now = performance.now();
+    if (now - lastFpsTime >= 1000) {
+        debugFPS.innerText = frameCount;
+        frameCount = 0;
+        lastFpsTime = now;
+        if (parseInt(debugFPS.innerText) < 24) {
+            debugFPS.style.color = "red";
+        } else {
+            debugFPS.style.color = "#00ff00";
+        }
+    }
+    if (playerPos) {
+        const x = playerPos.x.toFixed(2);
+        const y = CONFIG.playerHeight.toFixed(2);
+        const z = playerPos.z.toFixed(2);
+        debugCoords.innerText = `X: ${x} | Y: ${y} | Z: ${z}`;
+    }
+}
+function triggerHyperInflation() {
+    economy.inflation += 1.8;
+    crimeAlert = true;
+    updatePrices();
+    showActionText("⚠️ BẠN GÂY RA KHỦNG HOẢNG LẠM PHÁT VÀ BỊ CÔNG AN TRUY NÃ!");
+    checkGovtFoodAid();
+}
+let govtAidLastDay = -999;
+const GOVT_AID_INFLATION_THRESHOLD = 3.0;
+function checkGovtFoodAid() {
+    if(economy.inflation >= GOVT_AID_INFLATION_THRESHOLD && (economy.day - govtAidLastDay) >= 3) {
+        govtAidLastDay = economy.day;
+        inventory.noodles += 15;
+        inventory.rice += 5;
+        updatePrices();
+        setTimeout(() => {
+            showActionText("📦 CHÍNH PHỦ HỖ TRỢ: Lạm phát tăng quá cao, phát lương thực cứu trợ dân nghèo! +15 mì gói, +5kg lúa.");}, 4200);}}
+const playlist = [
+    { id: 1, file: 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Quoc_ca_Viet_Nam.ogg', name: 'QUỐC CA (Tiến Quân Ca-Không Lời)', price: 0 },
+    { id: 2, file: 'audio/P5V.ogg', name: 'P5V', price: 30000 },
+    { id: 3, file: 'audio/NPP.mp3', name: 'Nhạc PHÁP', price: 35000 },
+    { id: 4, file: 'audio/My_gal.ogg', name: 'My Gal - The Hackberry Ramblers (1930s)', price: 20000 },
+    { id: 5, file: 'audio/sad_ending.ogg', name: '�', price: 5000 },
+    { id: 6, file: 'audio/End_game.ogg', name: 'Why? The End', price: 15000 },
+    { id: 7, file: 'audio/A.ogg', name: '…', price: 100000 },
+    { id: 8, file: 'audio/2-9.mp3', name: 'Nhạc Hùng mạnh', price: 10000 },
+    { id: 9, file: 'audio/song.mp3', name: 'Nhạc hay', price: 10000 },
+    { id: 10, file: 'audio/Sai_Gon.mp3', name: 'Âm Thanh Phố Sài Gòn', price: 10000 }
+];
+let heldTape = null;
+let musicBoxAudio = new Audio();
+const achievements = [
+    { id: 'first_steps', title: 'Công dân Phước Vinh', desc: 'Bước chân vào nơi kỳ lạ', icon: '🚶‍♂️', reward: 500000, unlocked: false, check: () => true },
+    { id: 'rich_man', title: 'Tỷ Phú Xã Nghèo', desc: 'Tích lũy đạt tổng số tiền mặt từ 2.000.000 đ trở lên.', icon: '💵', reward: 800000, unlocked: false, check: () => inventory.money >= 2000000 },
+    { id: 'rich_man1', title: 'Tỷ Phú Xã Nghèo!(+1)', desc: 'Tích lũy đạt tổng số tiền mặt từ 5.000.000 đ trở lên.', icon: '💵', reward: 1000000, unlocked: false, check: () => inventory.money >= 5000000 },
+    { id: 'rich_man2', title: 'Tỷ Phú KHÔNG Xã Nghèo!(+2)', desc: 'Tích lũy đạt tổng số tiền mặt từ 1.000.000.000 đ trở lên.', icon: '💵', reward: 150000000, unlocked: false, check: () => inventory.money >= 100000000 },
+    { id: 'debt_free', title: 'Hoàn Lương Hết Nợ', desc: 'Thanh toán sạch toàn bộ số nợ gốc cho chủ nợ Tám Đen.', icon: '📜', reward: 15000000, unlocked: false, check: () => inventory.debt === 0 },
+    { id: 'master_farmer', title: 'Nông Dân Chân Chất', desc: 'Thu hoạch tổng cộng từ 67kg lúa chín trở lên.', icon: '🌾', reward: 9000000, unlocked: false, check: () => inventory.rice >= 67 },
+    { id: 'fisherman', title: 'Bậc thầy về cá ', desc: 'Có được tổng cộng từ 50 con cá tại ao làng.', icon: '🐟', reward: 8000000, unlocked: false, check: () => inventory.fish >= 50 },
+    { id: 'survive_night', title: 'Chào Ngày Thứ 2', desc: 'Bạn vẫn ở đây🥹😲', icon: '🫂', reward: 15000000, unlocked: false, check: () => {return economy.day >= 2;}},
+    { id: 'WOW', title: 'Chào Ngày Thứ 3', desc: 'Bạn vẫn còn ở đây🥹', icon: '🫂', reward: 150000000, unlocked: false, check: () => {return economy.day >= 3;}}
+];
+
+function checkAchievements() {
+    achievements.forEach(ach => {
+        if (!ach.unlocked && ach.check()) {
+            ach.unlocked = true;
+            inventory.money += ach.reward;
+            triggerAchievementPopup(ach);
+            updatePrices();
+        }
+    });
+}
+
+let achQueue = [];
+let isShowingAch = false;
+
+function triggerAchievementPopup(ach) {
+    achQueue.push(ach);
+    processAchievementQueue();
+}
+
+function processAchievementQueue() {
+    if (isShowingAch || achQueue.length === 0) return;
+    isShowingAch = true;
+    const ach = achQueue.shift();
+
+    document.getElementById("achIcon").innerText = ach.icon;
+    document.getElementById("achTitle").innerText = ach.title;
+    document.getElementById("achDesc").innerText = ach.desc;
+    document.getElementById("achRewardText").innerText = `Thưởng: +${ach.reward.toLocaleString()} đ`;
+
+    const popup = document.getElementById("achievement-popup");
+    popup.classList.add("show");
+
+    setTimeout(() => {
+        popup.classList.remove("show");
+        setTimeout(() => {
+            isShowingAch = false;
+            processAchievementQueue();
+        }, 500);
+    }, 7000);}
+setTimeout(() => {
+    checkAchievements();}, 1000);
+function initThreeJS() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x95c8e2);
+    scene.fog = new THREE.FogExp2(0x95c8e2, 0.003);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    playerPos.set(0, 0, 80);
+    camera.position.set(0, CONFIG.playerHeight, 80);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    scene.add(ambientLight);
+    const sunLight = new THREE.DirectionalLight(0xfffaee, 1.1);
+    sunLight.position.set(120, 180, 90);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
+    buildSatelliteLayout();
+    buildInteractiveEntities();
+    buildMarketAmbience();
+    buildDecorativeNPCs();
+    createEastSea();
+    createDrivableCar(30, 50);
+    buildDayNightSystem();
+    buildFootballKids();
+    buildFishingPond();
+    buildNightmarchers();
+    playerMesh = createLocalPlayerMesh();
+    updateCameraPosition();
+
+    // Chạy mod sau khi scene đã tồn tại, để mod có thể thêm object/NPC ngay.
+    if (window.modSystem) {
+        window.modSystem.executeAllMods(scene, interactables);
+    }
+
+    document.getElementById("loading").style.display = "none";
+    window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });animate();}
+function createSignTexture(text, bgColor, textColor, subtext="") {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = bgColor; ctx.fillRect(0,0,512,128);
+    ctx.fillStyle = textColor; 
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 44px Arial';
+    ctx.fillText(text, 256, 50);
+    if(subtext) {
+        ctx.font = 'bold 18px Arial';
+        ctx.fillText(subtext, 256, 100);
+    }
+    return new THREE.CanvasTexture(canvas);
+}
+function addBoxCollider(x, y, z, w, h, d) {
+    const box = new THREE.Box3(
+        new THREE.Vector3(x - w/2, y - h/2, z - d/2),
+        new THREE.Vector3(x + w/2, y + h/2, z + d/2)
+    );
+    colliderBoxes.push(box);
+}
+
+// --- KHÔNG GIAN BẢN ĐỒ---
+function buildSatelliteLayout() {
+    // Mặt nền cỏ tổng thể địa phương
+    const terrain = new THREE.Mesh(
+        new THREE.PlaneGeometry(15800, 15800),
+        new THREE.MeshStandardMaterial({ color: 0x557a46, roughness: 1 })
+    );
+    terrain.rotation.x = -Math.PI / 2;
+    terrain.receiveShadow = true;
+    scene.add(terrain);
+
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.8 });
+
+    // 1. Trục đường chính nằm ngang (Đi ngang qua BHX và tiệm tóc)
+    const mainHorizontalRoad = new THREE.Mesh(new THREE.BoxGeometry(1000, 0.2, 16), roadMat);
+    mainHorizontalRoad.position.set(0, 0.1, 20);
+    scene.add(mainHorizontalRoad);
+
+    // 2. Các nhánh đường dọc chạy xuống phía Nam
+    const westVerticalRoad = new THREE.Mesh(new THREE.BoxGeometry(14, 0.2, 500), roadMat);
+    westVerticalRoad.position.set(-70, 0.1, -100); // Chạy qua xưởng hạt điều
+    scene.add(westVerticalRoad);
+
+    const centerVerticalRoad = new THREE.Mesh(new THREE.BoxGeometry(14, 0.2, 300), roadMat);
+    centerVerticalRoad.position.set(25, 0.1, -50); 
+    scene.add(centerVerticalRoad);
+
+    // 3. Đường cong rẽ vào Chợ Phước Vinh ở phía Bắc
+    const marketRoad = new THREE.Mesh(new THREE.BoxGeometry(12, 0.2, 24), roadMat);
+    marketRoad.position.set(137, 0.1, 40);
+    scene.add(marketRoad);
+
+    // --- DỰNG CÁC KIẾN TRÚC THEO VỊ TRÍ---
+    const bhx = new THREE.Mesh(new THREE.BoxGeometry(45, 12, 25), new THREE.MeshStandardMaterial({ color: 0x006837 }));
+    bhx.position.set(-182, 6, -16); bhx.castShadow = true; scene.add(bhx);
+    addBoxCollider(-182, 6, 45, 45, 12, 25);
+    const texBHX = createSignTexture("BÁCH HÓA XANH", "#006837", "#fff", "Ấp Phước Lợi - Tiện ích cho mọi nhà");
+    const signBHX = new THREE.Mesh(new THREE.PlaneGeometry(35, 7), new THREE.MeshBasicMaterial({map: texBHX}));
+    signBHX.position.set(-182, 11, -3); scene.add(signBHX);
+
+    // B. Chợ Phước Vinh
+    const marketMat = new THREE.MeshStandardMaterial({ color: 0xdcdcdc });
+    const marketBuilding = new THREE.Mesh(new THREE.BoxGeometry(70, 14, 45), marketMat);
+    marketBuilding.position.set(70, 7, 110); marketBuilding.castShadow = true; scene.add(marketBuilding);
+    addBoxCollider(70, 7, 110, 70, 14, 45);
+const texMarket = createSignTexture("CHỢ PHƯỚC VINH", "#d32f2f", "#fff", "Tổ 8 Phước Lợi Phước Vinh CT-TN");
+    const signMarket = new THREE.Mesh(new THREE.PlaneGeometry(40, 8), new THREE.MeshBasicMaterial({map: texMarket}));
+    signMarket.position.set(70, 15, 87.4); signMarket.rotation.y = Math.PI; scene.add(signMarket);
+
+    // Sạp chợ phụ bao quanh bằng dù xanh
+    for(let i=0; i<12; i++) {
+        let rx = 40 + (i % 4) * 15;
+        let rz = 70 + Math.floor(i / 4) * 12;
+        let stall = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 4), new THREE.MeshStandardMaterial({color:0x8b5a2b}));
+        stall.position.set(rx, 1, rz); scene.add(stall);
+        addBoxCollider(rx, 1, rz, 4, 2, 4);
+    }
+
+    // C. Tiệm Tóc Kiều My (Đối diện ngã rẽ lối vào trung tâm)
+    const salon = new THREE.Mesh(new THREE.BoxGeometry(18, 9, 16), new THREE.MeshStandardMaterial({ color: 0xffc0cb }));
+    salon.position.set(50, 4.5, 5); salon.castShadow = true; scene.add(salon);
+    addBoxCollider(50, 4.5, 5, 18, 9, 16);
+    const texSalon = createSignTexture("TIỆM TÓC KIỀU MY", "#ff1493", "#fff", "Uốn - Duỗi - Nhuộm Thời Trang");
+    const signSalon = new THREE.Mesh(new THREE.PlaneGeometry(16, 4.5), new THREE.MeshBasicMaterial({map: texSalon}));
+    signSalon.position.set(50, 8, 13.1); scene.add(signSalon);
+
+    // D. Cơ sở gia công tách lụa hạt điều (Nằm sâu phía Nam trục đường Tây)
+    const cashewFactory = new THREE.Mesh(new THREE.BoxGeometry(60, 16, 40), new THREE.MeshStandardMaterial({ color: 0xb0c4de }));
+    cashewFactory.position.set(-110, 8, -80); cashewFactory.castShadow = true; scene.add(cashewFactory);
+    addBoxCollider(-110, 8, -80, 60, 16, 40);
+    const texCashew = createSignTexture("XƯỞNG HẠT ĐIỀU", "#2f4f4f", "#e0ffff", "Cơ sở tách lụa kinh tế nghèo");
+const signCashew = new THREE.Mesh(new THREE.PlaneGeometry(45, 8), new THREE.MeshBasicMaterial({map: texCashew}));
+signCashew.position.set(-79.9, 12, -80); signCashew.rotation.y = Math.PI / 2; scene.add(signCashew);
+function createSchool(x, z) {
+    const schoolGroup = new THREE.Group();
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xedd07e, roughness: 0.6 });
+    const wallDarkMat = new THREE.MeshStandardMaterial({ color: 0xd4a343, roughness: 0.6 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0xb83223, roughness: 0.4 });
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x1b4d3e, roughness: 0.5 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x8ecae6, roughness: 0.1, metalness: 0.3 });
+    const railingMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.4 });
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0xb5b0a5, roughness: 0.8 });
+    const gatePillarMat = new THREE.MeshStandardMaterial({ color: 0x8b0000, roughness: 0.5 });
+    const benchMat = new THREE.MeshStandardMaterial({ color: 0xd9d9d9, roughness: 0.3 });
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.9 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.7 });
+    const bannerRedMat = new THREE.MeshStandardMaterial({ color: 0xcc0000 });
+    const flagRedMat = new THREE.MeshStandardMaterial({ color: 0xda251d });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xffcd00, metalness: 0.5, roughness: 0.3 });
+    function createGabledRoof(width, depth, height) {
+        const shape = new THREE.Shape();
+        shape.moveTo(-width / 2, 0);
+        shape.lineTo(0, height);
+        shape.lineTo(width / 2, 0);
+        shape.closePath();
+        const extrudeSettings = { depth: depth, bevelEnabled: false };
+        const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geom.center();
+        const mesh = new THREE.Mesh(geom, roofMat);
+        mesh.castShadow = true;
+        return mesh;
+    }
+    function createBuildingBlock(width, depth, height, floors) {
+        const block = new THREE.Group();
+        const floorHeight = height / floors;
+        const corridorDepth = 2.5;
+        const roomDepth = depth - corridorDepth;
+        const bodyGeom = new THREE.BoxGeometry(width, height, roomDepth);
+        const bodyMesh = new THREE.Mesh(bodyGeom, wallMat);
+        bodyMesh.position.set(0, height / 2, -corridorDepth / 2);
+        bodyMesh.castShadow = true;
+        bodyMesh.receiveShadow = true;
+        block.add(bodyMesh);
+        const baseGeom = new THREE.BoxGeometry(width + 0.2, 1.2, roomDepth + 0.2);
+        const baseMesh = new THREE.Mesh(baseGeom, wallDarkMat);
+        baseMesh.position.set(0, 0.6, -corridorDepth / 2);
+        block.add(baseMesh);
+        for (let f = 0; f < floors; f++) {
+        const yFloor = f * floorHeight;
+            const slabGeom = new THREE.BoxGeometry(width + 0.4, 0.3, corridorDepth);
+            const slabMesh = new THREE.Mesh(slabGeom, wallDarkMat);
+            slabMesh.position.set(0, yFloor + 0.15, roomDepth / 2 - corridorDepth / 2);
+            block.add(slabMesh);
+            const railingGeom = new THREE.BoxGeometry(width, 0.9, 0.15);
+            const railingMesh = new THREE.Mesh(railingGeom, railingMat);
+            railingMesh.position.set(0, yFloor + 0.6, depth / 2 - 0.1);
+            block.add(railingMesh);
+            const numPillars = Math.floor(width / 5);
+            const pillarSpacing = width / numPillars;
+            for (let p = 0; p <= numPillars; p++) {
+                const px = -width / 2 + p * pillarSpacing;
+                const pillarGeom = new THREE.BoxGeometry(0.5, floorHeight, 0.5);
+                const pillarMesh = new THREE.Mesh(pillarGeom, wallMat);
+                pillarMesh.position.set(px, yFloor + floorHeight / 2, depth / 2 - 0.25);
+                pillarMesh.castShadow = true;
+                block.add(pillarMesh);
+            }
+            const numClassrooms = Math.floor(width / 10);
+            const classWidth = width / numClassrooms;
+for (let c = 0; c < numClassrooms; c++) {
+const startX = -width / 2 + c * classWidth;
+const doorGroup = new THREE.Group();
+const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(4, 5, 0.1), frameMat);
+const doorGlass = new THREE.Mesh(new THREE.BoxGeometry(3.7, 4, 0.12), glassMat);
+doorGlass.position.y = 0.4;
+doorGroup.add(doorFrame, doorGlass);
+doorGroup.position.set(startX + 2, yFloor + 1.35, roomDepth / 2 - corridorDepth / 2 + 0.05);
+                block.add(doorGroup);
+                for (let w = 0; w < 2; w++) {
+const winGroup = new THREE.Group();
+const winFrame = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.2, 0.1), frameMat);
+const winGlass = new THREE.Mesh(new THREE.BoxGeometry(2, 3.2, 0.12), glassMat);
+winGroup.add(winFrame, winGlass);
+winGroup.position.set(startX + 5 + w * 2.5, yFloor + 2.0, roomDepth / 2 - corridorDepth / 2 + 0.05);
+                    block.add(winGroup);
+                }
+            }
+        }
+        const roof = createGabledRoof(depth + 1.5, width + 1, 3.5);
+        roof.rotation.y = Math.PI / 2;
+        roof.position.set(0, height + 1.75, 0);
+        block.add(roof);
+
+        return block;
+    }
+    const blockA = createBuildingBlock(80, 20, 13.5, 2);
+    blockA.position.set(0, 0, -35);
+    schoolGroup.add(blockA);
+
+    // Bảng khẩu hiệu đỏ trên đỉnh Dãy A
+    const bannerGroup = new THREE.Group();
+    const bannerBoard = new THREE.Mesh(new THREE.BoxGeometry(26, 2.2, 0.4), bannerRedMat);
+    const bannerBorder = new THREE.Mesh(new THREE.BoxGeometry(26.4, 2.4, 0.3), goldMat);
+    bannerGroup.add(bannerBoard, bannerBorder);
+    bannerGroup.position.set(0, 15, -28);
+    schoolGroup.add(bannerGroup);
+
+    // Dãy B (Bên trái)
+    const blockB = createBuildingBlock(50, 20, 13.5, 2);
+    blockB.rotation.y = Math.PI / 2;
+    blockB.position.set(-37, 0, -5);
+    schoolGroup.add(blockB);
+
+    // Dãy C (Bên phải)
+    const blockC = createBuildingBlock(50, 20, 13.5, 2);
+    blockC.rotation.y = -Math.PI / 2;
+    blockC.position.set(37, 0, -5);
+    schoolGroup.add(blockC);
+    const courtyard = new THREE.Mesh(
+        new THREE.PlaneGeometry(100, 90),
+        groundMat
+    );
+    courtyard.rotation.x = -Math.PI / 2;
+    courtyard.position.set(0, 0.02, 5);
+    courtyard.receiveShadow = true;
+    schoolGroup.add(courtyard);
+    const flagPedestalGroup = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+        const stepSize = 6 - i * 1.2;
+        const step = new THREE.Mesh(
+            new THREE.BoxGeometry(stepSize, 0.4, stepSize),
+            wallDarkMat
+        );
+        step.position.y = i * 0.4 + 0.2;
+        step.receiveShadow = true;
+        flagPedestalGroup.add(step);
+    }
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0xdcdcdc, metalness: 0.9, roughness: 0.2 });
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.25, 18, 16), poleMat);
+    pole.position.y = 1.2 + 9;
+    pole.castShadow = true;
+    flagPedestalGroup.add(pole);
+    const poleTop = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), goldMat);
+    poleTop.position.y = 1.2 + 18;
+    flagPedestalGroup.add(poleTop);
+const flagTexture = new THREE.TextureLoader().load("photo/co_vn.jpeg");
+const flagMat = new THREE.MeshBasicMaterial({
+    map: flagTexture,
+    transparent: true,
+    side: THREE.DoubleSide
+});
+const flagMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(4.5, 3.0),
+    flagMat
+);
+flagMesh.position.set(2.25, 1.2 + 16.5, 0)
+flagPedestalGroup.add(flagMesh);
+
+    flagPedestalGroup.position.set(0, 0, -5);
+    schoolGroup.add(flagPedestalGroup);
+    const gateGroup = new THREE.Group();
+
+    // Trụ cổng đỏ
+    const pillarGeom = new THREE.BoxGeometry(2.5, 7.5, 2.5);
+    const leftPillar = new THREE.Mesh(pillarGeom, gatePillarMat);
+    leftPillar.position.set(-8, 3.75, 0);
+    leftPillar.castShadow = true;
+
+    const rightPillar = leftPillar.clone();
+    rightPillar.position.set(8, 3.75, 0);
+
+    // Biển tên trường phía trên cổng
+    const headerMesh = new THREE.Mesh(new THREE.BoxGeometry(19, 2.0, 2.8), wallDarkMat);
+    headerMesh.position.set(0, 7.5, 0);
+
+    const nameSign = new THREE.Mesh(new THREE.BoxGeometry(16, 1.2, 3.0), bannerRedMat);
+    nameSign.position.set(0, 7.5, 0);
+
+    gateGroup.add(leftPillar, rightPillar, headerMesh, nameSign);
+
+    // Hàng rào sắt & Tường bao
+    const fenceMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, metalness: 0.7 });
+    const wallBaseMat = new THREE.MeshStandardMaterial({ color: 0xedd07e });
+
+    const createFenceSegment = (w) => {
+        const seg = new THREE.Group();
+        const wallBase = new THREE.Mesh(new THREE.BoxGeometry(w, 1.5, 0.5), wallBaseMat);
+        wallBase.position.y = 0.75;
+        seg.add(wallBase);
+
+        const numBars = Math.floor(w / 0.6);
+        for (let b = 0; b < numBars; b++) {
+            const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.0), fenceMat);
+            bar.position.set(-w / 2 + b * 0.6 + 0.3, 2.5, 0);
+            seg.add(bar);
+        }
+        return seg;
+    };
+
+    const fenceLeft = createFenceSegment(34);
+    fenceLeft.position.set(-25, 0, 0);
+    const fenceRight = createFenceSegment(34);
+    fenceRight.position.set(25, 0, 0);
+
+    gateGroup.add(fenceLeft, fenceRight);
+    gateGroup.position.set(0, 0, 48);
+    schoolGroup.add(gateGroup);
+    function createSchoolTree() {
+        const tree = new THREE.Group();
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 6, 8), trunkMat);
+        trunk.position.y = 3;
+        trunk.castShadow = true;
+        tree.add(trunk);
+        for (let t = 0; t < 7; t++) {
+            const foliage = new THREE.Mesh(
+                new THREE.ConeGeometry(5 - t * 0.8, 3.5, 8),
+                leafMat
+            );
+            foliage.position.y = 5 + t * 2;
+            foliage.castShadow = true;
+            tree.add(foliage);}
+        const planter = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.6, 3.5), wallDarkMat);
+        planter.position.y = 0.3;
+        tree.add(planter);
+        return tree;}
+    const treePositions = [
+        [-20, 15], [20, 15],
+        [-20, -10], [20, -10],
+        [-18, 35], [18, 35]];
+    treePositions.forEach(([tx, tz]) => {
+        const tree = createSchoolTree();
+        tree.position.set(tx, 0, tz);
+        schoolGroup.add(tree);});
+    function createBench() {
+        const bench = new THREE.Group();
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.15, 0.8), benchMat);
+        seat.position.y = 0.8;
+        seat.castShadow = true;
+        const back = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 0.12), benchMat);
+        back.position.set(0, 1.2, -0.35);
+        back.castShadow = true;
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.8, 0.7), benchMat);
+        leg1.position.set(-0.8, 0.4, 0);
+        const leg2 = leg1.clone();
+        leg2.position.x = 0.8;
+
+        bench.add(seat, back, leg1, leg2);
+        return bench;
+    }
+    const benchConfigs = [
+        [-18, 0, 17, Math.PI / 2], [18, 0, 17, -Math.PI / 2],
+        [-18, 0, -8, Math.PI / 2], [18, 0, -8, -Math.PI / 2],
+        [-10, 0, -26, 0], [10, 0, -26, 0], [-25, 0, -26, 0], [25, 0, -26, 0]
+    ];
+    benchConfigs.forEach(([bx, by, bz, rot]) => {
+        const bench = createBench();
+        bench.position.set(bx, by, bz);
+        bench.rotation.y = rot;
+        schoolGroup.add(bench);});
+    schoolGroup.position.set(x, 0, z);
+    scene.add(schoolGroup);
+    if (typeof addBoxCollider === 'function') {
+        addBoxCollider(x, 6.75, z - 35, 80, 13.5, 14);
+        addBoxCollider(x - 37, 6.75, z - 5, 14, 13.5, 50);
+        addBoxCollider(x + 37, 6.75, z - 5, 14, 13.5, 50);
+        addBoxCollider(x - 25, 2, z + 48, 34, 4, 1);
+        addBoxCollider(x + 25, 2, z + 48, 34, 4, 1);
+        addBoxCollider(x - 8, 3.75, z + 48, 2.5, 7.5, 2.5);
+        addBoxCollider(x + 8, 3.75, z + 48, 2.5, 7.5, 2.5);}
+    return schoolGroup;}
+createSchool(295, -40);
+const textureLoader = new THREE.TextureLoader();
+const textures = {
+hospitalSign: textureLoader.load('photo/bhbv.jpg'),
+ubndSign: textureLoader.load('photo/ubndxpv.jpg'),
+photoSign: textureLoader.load('photo/bh-photocopy.jpg'),
+glass: textureLoader.load('photo/cs-(window).jpg'),
+hoWa:textureLoader.load('photo/bt~0.jpg'),
+ubndWall: textureLoader.load('photo/bt~1.jpg'),
+photoWall: textureLoader.load('photo/bt~2.jpg'),
+doorWood: textureLoader.load('photo/cg.png')
+};
+[textures.hoWa, textures.ubndWall, textures.photoWall].forEach(tex => {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 2);
+});
+function createHospital(x, z, rotationY = Math.PI) {
+    const hospitalGroup = new THREE.Group();
+    const wallMat = new THREE.MeshStandardMaterial({ map: textures.hoWa, roughness: 0.5 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x990000, roughness: 0.3 });
+    const windowMat = new THREE.MeshStandardMaterial({ map: textures.glass, roughness: 0.1, metalness: 0.6 });
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    const crossMat = new THREE.MeshStandardMaterial({ color: 0xdd0000 });
+    const mainBuilding = new THREE.Mesh(new THREE.BoxGeometry(50, 18, 40), wallMat);
+    mainBuilding.position.set(0, 9, 0);
+    mainBuilding.castShadow = true;
+    mainBuilding.receiveShadow = true;
+    hospitalGroup.add(mainBuilding);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(53, 2, 43), roofMat);
+    roof.position.set(0, 18.5, 0);
+    roof.castShadow = true;
+    hospitalGroup.add(roof);
+    const crossGroup = new THREE.Group();
+    const crossH = new THREE.Mesh(new THREE.BoxGeometry(8, 2.5, 1.5), crossMat);
+    const crossV = new THREE.Mesh(new THREE.BoxGeometry(2.5, 8, 1.5), crossMat);
+    crossGroup.add(crossH, crossV);
+    crossGroup.position.set(0, 23, -20);
+    hospitalGroup.add(crossGroup);
+    const frontZ = -20.5;
+    const mainDoor = new THREE.Mesh(new THREE.BoxGeometry(8, 8, 0.5), textures.doorWood ? new THREE.MeshStandardMaterial({ map: textures.doorWood }) : frameMat);
+    mainDoor.position.set(0, 4, frontZ);
+    hospitalGroup.add(mainDoor);
+
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(14, 1, 6), roofMat);
+    canopy.position.set(0, 8.5, frontZ - 2.5);
+    hospitalGroup.add(canopy);
+    const signMat = new THREE.MeshBasicMaterial({ map: textures.hospitalSign });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(35, 6), signMat);
+sign.position.set(0, 15, frontZ - 0.1);
+    sign.rotation.y = Math.PI;
+    hospitalGroup.add(sign);
+    hospitalGroup.position.set(x, 0, z);
+    hospitalGroup.rotation.y = rotationY;
+    if (typeof addBoxCollider === 'function') addBoxCollider(x, 9, z, 50, 18, 40);
+    scene.add(hospitalGroup);}
+function createUBND(x, z, rotationY = Math.PI) {
+    const ubndGroup = new THREE.Group();
+    const wallMat = new THREE.MeshStandardMaterial({ map: textures.ubndWall, roughness: 0.6 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0xd84315, roughness: 0.4 });
+    const windowMat = new THREE.MeshStandardMaterial({ map: textures.glass, roughness: 0.1, metalness: 0.5 });
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
+    const mainBuilding = new THREE.Mesh(new THREE.BoxGeometry(45, 16, 35), wallMat);
+    mainBuilding.position.set(0, 8, 0);
+    mainBuilding.castShadow = true;
+    ubndGroup.add(mainBuilding);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(48, 2.5, 38), roofMat);
+    roof.position.set(0, 16.5, 0);
+    ubndGroup.add(roof);
+    const frontZ = -17.8;
+    for (let i = 0; i < 2; i++) {
+        const window = new THREE.Mesh(new THREE.BoxGeometry(6, 4.5, 0.4), windowMat);
+        window.position.set(-15 + i * 11, 5, frontZ);
+        ubndGroup.add(window);
+    }
+    const door = new THREE.Mesh(new THREE.BoxGeometry(6, 8, 0.4), new THREE.MeshStandardMaterial({ color: 0x4e2710 }));
+    door.position.set(0, 4, frontZ);
+    ubndGroup.add(door);
+const textureLoader = new THREE.TextureLoader();
+const flagTexture = textureLoader.load('photo/co_vn.jpeg');
+const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 16), poleMat);
+flagPole.position.set(-18, 8, frontZ - 6);
+ubndGroup.add(flagPole);
+const flagGeo = new THREE.PlaneGeometry(6, 4);
+const flagMat = new THREE.MeshStandardMaterial({
+    map: flagTexture,
+    side: THREE.DoubleSide});
+const flag = new THREE.Mesh(flagGeo, flagMat);
+flag.position.set(-15, 14, frontZ - 6);
+ubndGroup.add(flag);
+
+    const signMat = new THREE.MeshBasicMaterial({ map: textures.ubndSign });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(30, 5), signMat);
+    sign.position.set(0, 13.5, frontZ - 0.1);
+    sign.rotation.y = Math.PI;
+    ubndGroup.add(sign);
+
+    ubndGroup.position.set(x, 0, z);
+    ubndGroup.rotation.y = rotationY;
+
+    if (typeof addBoxCollider === 'function') addBoxCollider(x, 8, z, 45, 16, 35);
+    scene.add(ubndGroup);
+}
+function createPhotocopy(x, z, rotationY = Math.PI) {
+    const photoGroup = new THREE.Group();
+    const wallMat = new THREE.MeshStandardMaterial({ map: textures.photoWall, roughness: 0.5 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x00838f, roughness: 0.3 });
+    const glassMat = new THREE.MeshStandardMaterial({ map: textures.glass, roughness: 0.1, metalness: 0.4 });
+    const mainBuilding = new THREE.Mesh(new THREE.BoxGeometry(18, 9, 14), wallMat);
+    mainBuilding.position.set(0, 4.5, 0);
+    mainBuilding.castShadow = true;
+    photoGroup.add(mainBuilding);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(19.5, 1.2, 15.5), roofMat);
+    roof.position.set(0, 9.5, 0);
+    photoGroup.add(roof);
+    const frontZ = -7.1;
+    const displayWindow = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 0.3), glassMat);
+    displayWindow.position.set(-4, 3, frontZ);
+    photoGroup.add(displayWindow);
+    const door = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 0.3), glassMat);
+    door.position.set(4, 3, frontZ);
+    photoGroup.add(door);
+    const signMat = new THREE.MeshBasicMaterial({ map: textures.photoSign });
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(16, 3.5), signMat);
+    sign.position.set(0, 7.2, frontZ - 0.1);
+    sign.rotation.y = Math.PI;
+    photoGroup.add(sign);
+
+    photoGroup.position.set(x, 0, z);
+    photoGroup.rotation.y = rotationY;
+
+if (typeof addBoxCollider === 'function') addBoxCollider(x, 4.5, z, 18, 9, 14);
+    scene.add(photoGroup);
+}
+createHospital(211, 50, 0);
+createUBND(285, 50, 0);
+createPhotocopy(250, 35, 0);
+function createInternetCafe(x, z, rotationY = 0) {
+    const netGroup = new THREE.Group();
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x34495e, roughness: 0.6 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x16a085, roughness: 0.4 });
+    const deskMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+    const monitorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
+    const screenMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0x4e2710 }); // Màu cửa gỗ
+
+    // 1. Tòa nhà tiệm net (chia tường trái/phải/sau để chừa khoảng trống cửa ra vào ở mặt trước Z = 8)
+    // Tường sau
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(22, 10, 1), wallMat);
+    backWall.position.set(0, 5, -7.5);
+    backWall.castShadow = true;
+    netGroup.add(backWall);
+
+    // Tường trái
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 16), wallMat);
+    leftWall.position.set(-10.5, 5, 0);
+    leftWall.castShadow = true;
+    netGroup.add(leftWall);
+
+    // Tường phải
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 16), wallMat);
+    rightWall.position.set(10.5, 5, 0);
+    rightWall.castShadow = true;
+    netGroup.add(rightWall);
+
+    // Tường trước bên trái cửa
+    const frontLeft = new THREE.Mesh(new THREE.BoxGeometry(8.5, 10, 1), wallMat);
+    frontLeft.position.set(-6.75, 5, 7.5);
+    netGroup.add(frontLeft);
+
+    // Tường trước bên phải cửa
+    const frontRight = new THREE.Mesh(new THREE.BoxGeometry(8.5, 10, 1), wallMat);
+    frontRight.position.set(6.75, 5, 7.5);
+    netGroup.add(frontRight);
+
+    // Tường trên lanh-tô cửa ra vào
+    const frontTop = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 1), wallMat);
+    frontTop.position.set(0, 8, 7.5);
+    netGroup.add(frontTop);
+
+    // Mái nhà
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(23.5, 1.2, 17.5), roofMat);
+    roof.position.set(0, 10.6, 0);
+    netGroup.add(roof);
+
+    // Biển hiệu tiệm net phía trên cửa
+    const texNet = createSignTexture("TIỆM NET PHƯỚC VINH", "#16a085", "#ffffff", "Game Online - 5k/Giờ");
+    const signNet = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), new THREE.MeshBasicMaterial({ map: texNet }));
+    signNet.position.set(0, 8.2, 8.1);
+    netGroup.add(signNet);
+
+    // 2. Dãy máy tính bên trong tiệm
+    for (let i = 0; i < 3; i++) {
+        const deskX = -5 + i * 5;
+        const desk = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2, 2.5), deskMat);
+        desk.position.set(deskX, 1, -2);
+        netGroup.add(desk);
+
+        const monitor = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.3, 0.2), monitorMat);
+        monitor.position.set(deskX, 2.75, -1.2);
+        netGroup.add(monitor);
+
+        const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.1), screenMat);
+        screen.position.set(deskX, 2.75, -1.09);
+        netGroup.add(screen);
+
+        const pcInteract = new THREE.Group();
+        pcInteract.position.set(deskX, 2.75, -1.09);
+        pcInteract.userData = { type: 'net_pc', label: `Máy Tính Net #${i + 1}` };
+        netGroup.add(pcInteract);
+        interactables.push(pcInteract);
+    }
+
+    netGroup.position.set(x, 0, z);
+    netGroup.rotation.y = rotationY;
+    scene.add(netGroup);
+
+    // Thêm Collider bao quanh nhưng chừa khoảng trống lối đi phía trước để không bị chặn chân
+    if (typeof addBoxCollider === 'function') {
+        addBoxCollider(x - 10.5, 5, z, 1, 10, 16); // Tường trái
+        addBoxCollider(x + 10.5, 5, z, 1, 10, 16); // Tường phải
+        addBoxCollider(x, 5, z - 7.5, 22, 10, 1);  // Tường sau
+        addBoxCollider(x - 6.75, 5, z + 7.5, 8.5, 10, 1); // Tường trước trái
+        addBoxCollider(x + 6.75, 5, z + 7.5, 8.5, 10, 1); // Tường trước phải
+    }
+}
+
+// Gọi tạo Tiệm Net (Cửa chính hướng ra đường hoặc hướng bạn muốn)
+createInternetCafe(-10, 0, 0);
+function createEastSea(x, z, rotationY) {
+    const seaGroup = new THREE.Group();
+    seaGroup.position.set(x, 0, z);
+    seaGroup.rotation.y = rotationY;
+
+    const waterGeo = new THREE.PlaneGeometry(800, 1200, 32, 32);
+    const waterMat = new THREE.MeshStandardMaterial({
+        color: 0x1565c0,
+        transparent: true,
+        opacity: 0.85,
+        roughness: 0.3,
+        metalness: 0.4
+    });
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(420, 0.05, 0);
+    water.receiveShadow = true;
+    seaGroup.add(water);
+
+    const sand = new THREE.Mesh(
+        new THREE.PlaneGeometry(80, 1200),
+        new THREE.MeshStandardMaterial({ color: 0xe8d5a3, roughness: 1 })
+    );
+    sand.rotation.x = -Math.PI / 2;
+    sand.position.set(280, 0.08, 0);
+    seaGroup.add(sand);
+
+    const titanic = new THREE.Group();
+
+    const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.3 });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0x8b0000, roughness: 0.5 });
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8 });
+
+    const bottomHull = new THREE.Mesh(new THREE.BoxGeometry(90, 4, 16), redMat);
+    bottomHull.position.set(0, 2, 0);
+    bottomHull.castShadow = true;
+    titanic.add(bottomHull);
+
+    const mainHull = new THREE.Mesh(new THREE.BoxGeometry(86, 6, 15.5), blackMat);
+    mainHull.position.set(0, 7, 0);
+    mainHull.castShadow = true;
+    titanic.add(mainHull);
+
+    const superstructure = new THREE.Mesh(new THREE.BoxGeometry(60, 4, 14), whiteMat);
+    superstructure.position.set(0, 12, 0);
+    superstructure.castShadow = true;
+    titanic.add(superstructure);
+
+    const upperDeck = new THREE.Mesh(new THREE.BoxGeometry(35, 3, 12), whiteMat);
+    upperDeck.position.set(-2, 15.5, 0);
+    upperDeck.castShadow = true;
+    titanic.add(upperDeck);
+
+    const funnelGeo = new THREE.CylinderGeometry(1.2, 1, 7, 16);
+    const funnelTopGeo = new THREE.CylinderGeometry(1.25, 1.25, 0.8, 16);
+    const titanicFunnelMat = new THREE.MeshStandardMaterial({ color: 0xd4813b, roughness: 0.5 });
+
+    const funnelPositions = [-12, -4, 4, 12];
+    funnelPositions.forEach((posZ) => {
+        const funnelGroup = new THREE.Group();
+        
+        const stack = new THREE.Mesh(funnelGeo, titanicFunnelMat);
+        stack.position.y = 3.5;
+
+        const topBlack = new THREE.Mesh(funnelTopGeo, blackMat);
+        topBlack.position.y = 7;
+
+        funnelGroup.add(stack);
+        funnelGroup.add(topBlack);
+
+        funnelGroup.position.set(posZ, 17.5, 0);
+        funnelGroup.rotation.z = -0.05;
+        titanic.add(funnelGroup);
+    });
+
+    const mastGeo = new THREE.CylinderGeometry(0.2, 0.3, 22, 8);
+    
+    const frontMast = new THREE.Mesh(mastGeo, woodMat);
+    frontMast.position.set(30, 16, 0);
+    frontMast.rotation.z = -0.1;
+    titanic.add(frontMast);
+
+    const backMast = new THREE.Mesh(mastGeo, woodMat);
+    backMast.position.set(-32, 15, 0);
+    backMast.rotation.z = 0.1;
+    titanic.add(backMast);
+
+    titanic.position.set(380, 0, 40);
+    titanic.scale.set(0.6, 0.6, 0.6);
+    titanic.rotation.y = -0.3;
+    seaGroup.add(titanic);
+
+    function addCocoNoFruit(xCoco, zCoco) {
+        const g = new THREE.Group();
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.8 });
+        for (let i = 0; i < 8; i++) {
+            const segment = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1, 8), trunkMaterial);
+            segment.position.y = i + 0.5;
+            segment.rotation.z = 0.05 * i;
+            g.add(segment);
+        }
+        for (let i = 0; i < 12; i++) {
+            const leaf = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.5, 6),
+                new THREE.MeshStandardMaterial({ color: 0x2f8c38, side: THREE.DoubleSide })
+            );
+            leaf.position.y = 8;
+            leaf.rotation.y = i * (Math.PI / 6);
+            leaf.rotation.z = -Math.PI / 4;
+            g.add(leaf);
+        }
+        g.position.set(xCoco, 0, zCoco);
+        seaGroup.add(g);
+    }
+    addCocoNoFruit(260, 60);
+    addCocoNoFruit(255, 90);
+    addCocoNoFruit(270, -20);
+    addCocoNoFruit(265, -50);
+    addCocoNoFruit(250, 20);
+
+    scene.add(seaGroup);
+}createEastSea(0, 0, 0);
+
+
+function createBusStop(x, z, rotationY, imageUrl) {
+    const busStop = new THREE.Group();
+    busStop.position.set(x, 0, z);
+    busStop.rotation.y = rotationY;
+    const frameMaterial = new THREE.MeshStandardMaterial({
+        color: 0x444444,
+        roughness: 0.5,
+        metalness: 0.6});
+    const benchMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8b5a2b,
+        roughness: 0.8});
+    const width = 10;
+    const height = 6;
+    const depth = 5;
+    const backWallDepth = 0.2;
+    const backWall = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, backWallDepth),
+        frameMaterial);
+    backWall.position.set(0, height / 2, -depth / 2);
+    backWall.castShadow = true;
+    backWall.receiveShadow = true;
+    busStop.add(backWall);
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load(imageUrl);
+    const adMaterial = new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: 0.2,});
+    const adBoard = new THREE.Mesh(
+        new THREE.PlaneGeometry(width - 0.4, height - 0.4),
+        adMaterial);
+    adBoard.position.set(0, height / 2, -depth / 2 + backWallDepth / 2 + 0.02);
+    busStop.add(adBoard);
+    const roofThickness = 0.15;
+    const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(width + 0.4, roofThickness, depth + 0.4),
+        frameMaterial);
+    roof.position.set(0, height + roofThickness / 2, 0);
+    roof.castShadow = true;
+    busStop.add(roof);
+    const poleRadius = 0.08;
+    const poleGeo = new THREE.CylinderGeometry(poleRadius, poleRadius, height, 16);
+    const leftPole = new THREE.Mesh(poleGeo, frameMaterial);
+    leftPole.position.set(-width / 2 + 0.2, height / 2, depth / 2 - 0.2);
+    leftPole.castShadow = true;
+    busStop.add(leftPole);
+    const rightPole = new THREE.Mesh(poleGeo, frameMaterial);
+    rightPole.position.set(width / 2 - 0.2, height / 2, depth / 2 - 0.2);
+    rightPole.castShadow = true;
+    busStop.add(rightPole);
+    const benchWidth = 4;
+    const benchThickness = 0.1;
+    const benchDepth = 0.6;
+    const bench = new THREE.Mesh(
+        new THREE.BoxGeometry(benchWidth, benchThickness, benchDepth),
+        benchMaterial
+    );
+    bench.position.set(0, 0.7, -depth / 2 + 0.5);
+    bench.castShadow = true;
+    busStop.add(bench);
+    const legGeo = new THREE.BoxGeometry(0.1, 0.5, 0.4);
+    const leftLeg = new THREE.Mesh(legGeo, frameMaterial);
+    leftLeg.position.set(-1.5, 0.25, -depth / 2 + 0.5);
+    leftLeg.castShadow = true;
+    busStop.add(leftLeg);
+    const rightLeg = new THREE.Mesh(legGeo, frameMaterial);
+    rightLeg.position.set(1.5, 0.25, -depth / 2 + 0.5);
+    rightLeg.castShadow = true;
+    busStop.add(rightLeg);
+    scene.add(busStop);}
+createBusStop(10, 10, 0, 'photo/v(2-9).jpg');
+function buildCashewOrchard(startX, startZ) {const orchardGroup = new THREE.Group();
+    const trunkGeo = new THREE.CylinderGeometry(0.5, 0.7, 4, 8);
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+    const leavesGeo = new THREE.SphereGeometry(3.5, 8, 8);
+    const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2e6f40, roughness: 0.7 });
+    const fruitGeo = new THREE.SphereGeometry(0.3, 6, 6);
+    const fruitMat = new THREE.MeshStandardMaterial({ color: 0xe64a19, roughness: 0.3 });
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            const tree = new THREE.Group();
+            const posX = i * 14 + (Math.random() * 2 - 1);
+            const posZ = j * 14 + (Math.random() * 2 - 1);
+
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 2;
+            trunk.castShadow = true;
+            tree.add(trunk);
+
+            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+            leaves.position.y = 4.8;
+            leaves.scale.set(1.2, 0.8, 1.2);
+            leaves.castShadow = true;
+            tree.add(leaves);
+            for (let k = 0; k < 5; k++) {
+                const fruit = new THREE.Mesh(fruitGeo, fruitMat);
+                fruit.position.set(
+                    (Math.random() - 0.5) * 4,
+                    3.5 + Math.random() * 1.5,
+                    (Math.random() - 0.5) * 4
+                );
+                tree.add(fruit);
+            }
+            tree.position.set(posX, 0, posZ);
+            tree.userData = { type: 'cashew_tree', label: 'Cây điều' };
+            orchardGroup.add(tree);
+            interactables.push(tree);
+        }}
+orchardGroup.position.set(startX, 0, startZ);
+    scene.add(orchardGroup);
+}buildCashewOrchard(160, 120);
+
+    // E.nhà dân
+    function House1(x, z, houseIndex) {
+        const houseGroup = new THREE.Group();
+        const width = 12 + (houseIndex % 3) * 2;
+        const depth = 13 + (houseIndex % 2) * 3;
+        const height = 6.0;
+        const wallColors = [0xf5f2d0, 0xe8e3ba, 0xd0e8d3, 0xefeded, 0xfce4ec];
+        const wallColor = wallColors[houseIndex % wallColors.length];
+        const roofColors = [0x1f4e5b, 0x902b1f, 0x2e4053, 0xa93226];
+        const roofColor = roofColors[houseIndex % roofColors.length];
+        const mainWallMat = new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.8 });
+        const mainWall = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), mainWallMat);
+        mainWall.position.set(0, height / 2, 0);
+        mainWall.castShadow = true;
+        mainWall.receiveShadow = true;
+        houseGroup.add(mainWall);
+        const baseMat = new THREE.MeshStandardMaterial({ color: 0x5d6d7e, roughness: 0.7 });
+        const baseWall = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, 1.2, depth + 0.2), baseMat);
+        baseWall.position.set(0, 0.6, 0);
+        houseGroup.add(baseWall);
+        const roofHeight = 3.2;
+        const roofOverhang = 1.0;
+        const roofGeo = new THREE.ConeGeometry(Math.hypot(width / 2 + roofOverhang, depth / 2 + roofOverhang), roofHeight, 4);
+        const roofMat = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.5, metalness: 0.2 });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.rotation.y = Math.PI / 4; 
+        roof.scale.set(1, 1, depth / width);
+        roof.position.set(0, height + roofHeight / 2, 0);
+        roof.castShadow = true;
+        houseGroup.add(roof);
+        const porchDepth = 3.8;
+        const porchHeight = 3.8;
+        const porchRoofMat = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.6 });
+        const porchRoof = new THREE.Mesh(
+            new THREE.BoxGeometry(width + 0.8, 0.25, porchDepth),
+            porchRoofMat);
+        porchRoof.position.set(0, porchHeight, depth / 2 + porchDepth / 2 - 0.2);
+        porchRoof.rotation.x = 0.08;
+        porchRoof.castShadow = true;
+        houseGroup.add(porchRoof);
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+        const numPillars = 4;
+        for (let p = 0; p < numPillars; p++) {
+            const px = -(width / 2) + 0.5 + ((width - 1) / (numPillars - 1)) * p;
+            const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, porchHeight, 12), pillarMat);
+            pillar.position.set(px, porchHeight / 2, depth / 2 + porchDepth - 0.4);
+            pillar.castShadow = true;
+            houseGroup.add(pillar);}
+        const doorMat = new THREE.MeshStandardMaterial({ color: 0x4a235a, roughness: 0.4 });
+        const door = new THREE.Mesh(new THREE.BoxGeometry(3.0, 3.2, 0.15), doorMat);
+        door.position.set(0, 1.6 + 0.6, depth / 2 + 0.08);
+        houseGroup.add(door);
+        const glassMat = new THREE.MeshStandardMaterial({ color: 0x85c1e9, roughness: 0.1, metalness: 0.8 });
+        const doorGlass = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 0.18), glassMat);
+        doorGlass.position.set(0, 2.4, depth / 2 + 0.09);
+        houseGroup.add(doorGlass);
+        const windowMat = new THREE.MeshStandardMaterial({ color: 0x2e4053, roughness: 0.5 });
+        [-width / 3.2, width / 3.2].forEach(wx => {
+            const winFrame = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 0.15), windowMat);
+            winFrame.position.set(wx, 2.6, depth / 2 + 0.08);
+            const winGlass = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 0.18), glassMat);
+            winGlass.position.set(wx, 2.6, depth / 2 + 0.09);
+            houseGroup.add(winFrame, winGlass);});
+        const yardColor = (houseIndex % 2 === 0) ? 0x99a3a4 : 0xaa4a24;
+        const yardMat = new THREE.MeshStandardMaterial({ color: yardColor, roughness: 0.9 });
+        const yard = new THREE.Mesh(new THREE.PlaneGeometry(width + 4, porchDepth + 4), yardMat);
+        yard.rotation.x = -Math.PI / 2;
+        yard.position.set(0, 0.08, depth / 2 + (porchDepth + 4) / 2 - 0.4);
+        yard.receiveShadow = true;
+        houseGroup.add(yard);
+        if (houseIndex % 2 === 0) {
+            const tankMat = new THREE.MeshStandardMaterial({ color: 0xd5d8dc, metalness: 0.9, roughness: 0.2 });
+            const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 1.8, 16), tankMat);
+            tank.rotation.z = Math.PI / 2;
+            tank.position.set(width / 3.2, height + 0.7, -depth / 4);
+            tank.castShadow = true;
+            houseGroup.add(tank);}
+        const potMat = new THREE.MeshStandardMaterial({ color: 0xb03a2e, roughness: 0.8 });
+        const plantMat = new THREE.MeshStandardMaterial({ color: 0x1e8449, roughness: 0.9 });
+        [-width / 2 + 0.8, width / 2 - 0.8].forEach(px => {
+            const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.35, 0.7, 12), potMat);
+            pot.position.set(px, 0.35, depth / 2 + porchDepth - 0.4);
+            const plant = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), plantMat);
+            plant.position.set(px, 1.0, depth / 2 + porchDepth - 0.4);
+            pot.castShadow = true; plant.castShadow = true;
+            houseGroup.add(pot, plant);});
+        if (houseIndex % 3 === 0) {
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, metalness: 0.8 });
+            const antennaPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 5.5, 8), poleMat);
+            antennaPole.position.set(-width / 3, height + 2.75, -depth / 3);
+            const crossBar = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.04, 0.04), poleMat);
+            crossBar.position.set(-width / 3, height + 5.0, -depth / 3);
+            houseGroup.add(antennaPole, crossBar);}
+        houseGroup.position.set(x, 0, z);
+        if (x < -70) {
+            houseGroup.rotation.y = Math.PI / 2;
+        } else if (x > -60) {
+            houseGroup.rotation.y = -Math.PI / 2;}
+        scene.add(houseGroup);
+        addBoxCollider(x, (height + roofHeight) / 2, z, width + 2, height + roofHeight, depth + porchDepth + 1);}
+    for (let i = 0; i < 15; i++) {
+        let hz = -120 + i * 22;
+        let hx = (i % 2 === 0) ? -45 : -95;
+        if (hz > 150 || (hz > -20 && hz < 50)) continue;
+House1(hx, hz, i);}
+
+function House2(x, z,rotationY = Math.PI){
+    const house = new THREE.Group();
+    const width = 18;
+    const depth = 20;
+    const wallHeight = 8;
+    const wallThickness = 0.5;
+    const doorWidth = 3.8;
+    const doorHeight = 5.5;
+    const frontSegmentWidth = (width - doorWidth) / 2;
+    const wallMat = new THREE.MeshStandardMaterial({color: 0xf3e5c8, roughness: 0.82});
+    const trimMat = new THREE.MeshStandardMaterial({color: 0x6d4c41, roughness: 0.58});
+    const roofMat = new THREE.MeshStandardMaterial({color: 0x8e2f24, roughness: 0.55});
+    const glassMat = new THREE.MeshStandardMaterial({color: 0x73b9d6, roughness: 0.1, metalness: 0.35});
+    const floorMat = new THREE.MeshStandardMaterial({color: 0x9a7b5b, roughness: 0.9});
+    const bedFrameMat = new THREE.MeshStandardMaterial({color: 0x5d4037, roughness: 0.75});
+    const mattressMat = new THREE.MeshStandardMaterial({color: 0xf5f5f5, roughness: 0.88});
+    const blanketMat = new THREE.MeshStandardMaterial({color: 0x4f83cc, roughness: 0.84});
+    const stoveMat = new THREE.MeshStandardMaterial({color: 0x263238, metalness: 0.55, roughness: 0.4});
+    const counterMat = new THREE.MeshStandardMaterial({color: 0x795548, roughness: 0.72});
+    const innerLight = new THREE.PointLight(0xffd7a0, 1.2, 24);
+    innerLight.position.set(0, 4.6, 0);
+    house.add(innerLight);
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(width - 0.4, 0.3, depth - 0.4), floorMat);
+    floor.position.set(0, 0.15, 0);
+    floor.receiveShadow = true;
+    house.add(floor);
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(width, wallHeight, wallThickness), wallMat);
+    backWall.position.set(0, wallHeight / 2, -depth / 2);
+    house.add(backWall);
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, depth), wallMat);
+    leftWall.position.set(-width / 2, wallHeight / 2, 0);
+    house.add(leftWall);
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, depth), wallMat);
+    rightWall.position.set(width / 2, wallHeight / 2, 0);
+    house.add(rightWall);
+    const frontLeft = new THREE.Mesh(new THREE.BoxGeometry(frontSegmentWidth, wallHeight, wallThickness), wallMat);
+    frontLeft.position.set(-(doorWidth / 2 + frontSegmentWidth / 2), wallHeight / 2, depth / 2);
+    house.add(frontLeft);
+    const frontRight = new THREE.Mesh(new THREE.BoxGeometry(frontSegmentWidth, wallHeight, wallThickness), wallMat);
+    frontRight.position.set(doorWidth / 2 + frontSegmentWidth / 2, wallHeight / 2, depth / 2);
+    house.add(frontRight);
+    const frontTop = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, wallHeight - doorHeight, wallThickness), wallMat);
+    frontTop.position.set(0, doorHeight + (wallHeight - doorHeight) / 2, depth / 2);
+    house.add(frontTop);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.hypot(width / 2 + 1.2, depth / 2 + 1.2), 3.8, 4), roofMat);
+    roof.rotation.y = Math.PI / 4;
+    roof.scale.set(1, 1, depth / width);
+    roof.position.set(0, wallHeight + 1.9, 0);
+    roof.castShadow = true;
+    house.add(roof);
+    const doorFrameTop = new THREE.Mesh(new THREE.BoxGeometry(doorWidth + 0.35, 0.3, 0.35), trimMat);
+    doorFrameTop.position.set(0, doorHeight, depth / 2 + 0.1);
+    house.add(doorFrameTop);
+    const doorFrameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.3, doorHeight, 0.35), trimMat);
+    doorFrameLeft.position.set(-doorWidth / 2, doorHeight / 2, depth / 2 + 0.1);
+    house.add(doorFrameLeft);
+    const doorFrameRight = new THREE.Mesh(new THREE.BoxGeometry(0.3, doorHeight, 0.35), trimMat);
+    doorFrameRight.position.set(doorWidth / 2, doorHeight / 2, depth / 2 + 0.1);
+    house.add(doorFrameRight);
+    [-5.5, 5.5].forEach(wx => {
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.8, 0.18), trimMat);
+        frame.position.set(wx, 2.9, depth / 2 + 0.05);
+        house.add(frame);
+        const glass = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.3, 0.2), glassMat);
+        glass.position.set(wx, 2.9, depth / 2 + 0.08);
+        house.add(glass);
+    });
+
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(7, 1.2, 0.18), trimMat);
+    sign.position.set(0, 5.2, depth / 2 + 0.1);
+    house.add(sign);
+
+    const signTexture = createSignTexture('NHÀ CỦA BẠN', '#6d4c41', '#fff', 'Phước Vinh 3D');
+    const signFace = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 1.05), new THREE.MeshBasicMaterial({map: signTexture}));
+    signFace.position.set(0, 5.2, depth / 2 + 0.2);
+    house.add(signFace);
+    const bed = new THREE.Group();
+    const bedBase = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.7, 7.0), bedFrameMat);
+    bedBase.position.y = 0.55;
+    const mattress = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.5, 6.7), mattressMat);
+    mattress.position.y = 1.15;
+    const blanket = new THREE.Mesh(new THREE.BoxGeometry(4.05, 0.32, 3.1), blanketMat);
+    blanket.position.set(0, 1.55, 1.45);
+    bed.add(bedBase, mattress, blanket);
+    bed.position.set(-4.7, 0, -1.3);
+    bed.userData = {type: 'player_bed', label: 'Giường của bạn'};
+    house.add(bed);
+    if (typeof interactables !== 'undefined') interactables.push(bed);
+
+    const kitchen = new THREE.Group();
+    const counter = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.7, 2.0), counterMat);
+    counter.position.y = 0.85;
+    kitchen.add(counter);
+    const stoveTop = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.18, 1.45), stoveMat);
+    stoveTop.position.set(0, 1.75, 0);
+    kitchen.add(stoveTop);
+    [-1.2, 1.2].forEach(px => {
+        const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.12, 16), stoveMat);
+        burner.position.set(px, 1.88, 0);
+        kitchen.add(burner);
+    });
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.48, 0.42, 16), new THREE.MeshStandardMaterial({color: 0x9e9e9e, metalness: 0.7, roughness: 0.25}));
+    pot.position.set(0, 2.05, 0);
+    kitchen.add(pot);
+    kitchen.position.set(4.4, 0, -1.2);
+    kitchen.userData = {type: 'player_stove', label: 'Bếp của bạn'};
+    house.add(kitchen);
+    if (typeof interactables !== 'undefined') interactables.push(kitchen);
+    const table = new THREE.Mesh(new THREE.BoxGeometry(4, 0.25, 2.4), counterMat);
+    table.position.set(0, 1.7, 5.2);
+    house.add(table);
+    house.rotation.y = rotationY;
+    house.position.set(x, 0, z);
+    scene.add(house);
+    const cos = Math.cos(rotationY);
+    const sin = Math.sin(rotationY);
+
+    const addRotatedCollider = (localX, localY, localZ, sizeX, sizeY, sizeZ) => {
+        const worldX = x + (localX * cos + localZ * sin);
+        const worldZ = z + (-localX * sin + localZ * cos);
+        const rotatedSizeX = Math.abs(sizeX * cos) + Math.abs(sizeZ * sin);
+        const rotatedSizeZ = Math.abs(sizeX * sin) + Math.abs(sizeZ * cos);
+        if (typeof addBoxCollider !== 'undefined') {
+            addBoxCollider(worldX, localY, worldZ, rotatedSizeX, sizeY, rotatedSizeZ);
+        }
+    };
+    addRotatedCollider(0, wallHeight / 2, -depth / 2, width, wallHeight, wallThickness);
+    addRotatedCollider(-width / 2, wallHeight / 2, 0, wallThickness, wallHeight, depth);
+    addRotatedCollider(width / 2, wallHeight / 2, 0, wallThickness, wallHeight, depth);
+    addRotatedCollider(-(doorWidth / 2 + frontSegmentWidth / 2), wallHeight / 2, depth / 2, frontSegmentWidth, wallHeight, wallThickness);
+    addRotatedCollider(doorWidth / 2 + frontSegmentWidth / 2, wallHeight / 2, depth / 2, frontSegmentWidth, wallHeight, wallThickness);
+    addRotatedCollider(0, doorHeight + (wallHeight - doorHeight) / 2, depth / 2, doorWidth, wallHeight - doorHeight, wallThickness);}
+House2(0, 120);
+// Khu đồng lúa
+const farmGroup = new THREE.Group();
+// ĐẤT NỀN
+const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(180,180),
+    new THREE.MeshStandardMaterial({
+        color:0x7fb05a,
+        roughness:1
+    })
+);
+ground.rotation.x=-Math.PI/2;
+ground.receiveShadow=true;
+farmGroup.add(ground);
+// ĐƯỜNG ĐẤT
+const dirtRoad = new THREE.Mesh(
+    new THREE.PlaneGeometry(18,180),
+    new THREE.MeshStandardMaterial({
+        color:0x9b6b3d,
+        roughness:1
+    })
+);
+dirtRoad.rotation.x=-Math.PI/2;
+dirtRoad.position.set(-65,0.02,0);
+farmGroup.add(dirtRoad);
+// MƯƠNG NƯỚC
+const canal = new THREE.Mesh(
+    new THREE.PlaneGeometry(10,170),
+    new THREE.MeshStandardMaterial({
+        color:0x3b8dd1,
+        roughness:0.15,
+        metalness:0.1
+    })
+);
+canal.rotation.x=-Math.PI/2;
+canal.position.set(30,0.01,0);
+farmGroup.add(canal);
+// BỜ BAO
+const bundMat=new THREE.MeshStandardMaterial({
+    color:0x8b5a2b,
+    roughness:1
+});
+function bund(x,z,w,d){
+    const b=new THREE.Mesh(
+        new THREE.BoxGeometry(w,0.5,d),
+        bundMat
+    );
+    b.position.set(x,0.25,z);
+    b.castShadow=true;
+    b.receiveShadow=true;
+    farmGroup.add(b);
+}
+
+bund(0,-90,180,4);
+bund(0,90,180,4);
+bund(-90,0,4,180);
+bund(90,0,4,180);
+bund(-20,0,4,180);
+bund(55,0,4,180);
+bund(0,-20,180,4);
+bund(0,40,180,4);
+// RUỘNG LÚA
+const riceGreen=new THREE.MeshStandardMaterial({
+    color:0x5fa53b,
+    roughness:1
+});
+
+const riceYellow=new THREE.MeshStandardMaterial({
+    color:0xd7bb43,
+    roughness:1
+});
+
+function addRiceField(cx,cz,w,d){
+
+    for(let x=-w/2;x<w/2;x+=3){
+
+        for(let z=-d/2;z<d/2;z+=3){
+
+            const h=1.5+Math.random()*1;
+
+            const rice=new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08,0.12,h,5),
+                Math.random()>0.75?riceYellow:riceGreen
+            );
+
+            rice.position.set(
+                cx+x+Math.random(),
+                h/2,
+                cz+z+Math.random()
+            );
+
+            rice.castShadow=true;
+
+            farmGroup.add(rice);
+
+        }
+
+    }
+
+}
+
+addRiceField(-55,-55,55,55);
+addRiceField(10,-55,40,55);
+addRiceField(-55,25,55,45);
+addRiceField(10,35,40,35);
+addRiceField(70,-20,30,100);
+
+// BỤI TRE
+function makeLeafGeometry() {
+  const geom = new THREE.PlaneGeometry(0.15, 0.8);
+  geom.translate(0, 0.4, 0);
+  return geom;}
+function addBranch(parent, heightY, angleY, direction, leafGeo) {
+  const branch = new THREE.Group();
+  branch.position.set(0, heightY, 0);
+  branch.rotation.y = angleY;
+  const branchStem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.02, 1.0, 6),
+    new THREE.MeshStandardMaterial({ color: 0x56742f, roughness: 0.7 })
+  );
+  branchStem.position.set(0, 0.5, 0);
+  branchStem.rotation.z = (Math.PI / 4) * direction;
+  branch.add(branchStem);
+  const leafMaterial = new THREE.MeshStandardMaterial({
+    color: 0x3d7026,
+    roughness: 0.5,
+    side: THREE.DoubleSide
+  });
+  for (let i = 0; i < 4; i++) {
+    const leaf = new THREE.Mesh(leafGeo, leafMaterial);
+    leaf.position.set(
+      (Math.random() - 0.5) * 0.1,
+      0.6 + i * 0.15,
+      (Math.random() - 0.5) * 0.1
+    );
+    leaf.rotation.set(
+      (Math.random() - 0.5) * 0.5,
+      Math.random() * Math.PI,
+      (Math.PI / 3) * direction
+    );
+    branch.add(leaf);
+  }
+  parent.add(branch);}
+function createCulm(height, radius, leanX, leanZ) {
+  const culm = new THREE.Group();
+  const segmentHeight = 0.78;
+  const nodes = Math.floor(height / segmentHeight);
+  const leafGeometry = makeLeafGeometry();
+  culm.userData.baseRotationZ = leanX;
+  culm.userData.baseRotationX = leanZ;
+  culm.userData.phase = Math.random() * Math.PI * 2;
+  animatedCulms.push(culm);
+  for (let segmentIndex = 0; segmentIndex < nodes; segmentIndex++) {
+    const progress = segmentIndex / nodes;
+    const taper = 1 - progress * 0.43;
+    const lowerRadius = radius * taper;
+    const upperRadius = radius * (taper - 0.026);
+    const segment = new THREE.Mesh(
+      new THREE.CylinderGeometry(upperRadius, lowerRadius, segmentHeight, 10, 1),
+      new THREE.MeshStandardMaterial({
+        color: segmentIndex % 3 === 0 ? 0x7da947 : 0x719e3e,
+        roughness: 0.64,
+        metalness: 0.02
+      })
+    );
+    segment.position.y = segmentIndex * segmentHeight + segmentHeight / 2;
+    segment.position.x = Math.sin(segmentIndex * 0.54) * 0.018 * segmentIndex;
+    segment.position.z = Math.cos(segmentIndex * 0.42) * 0.013 * segmentIndex;
+    segment.castShadow = true;
+    segment.receiveShadow = true;
+    culm.add(segment);
+    if (segmentIndex > 0) {
+      const node = new THREE.Mesh(
+        new THREE.TorusGeometry(lowerRadius * 1.1, lowerRadius * 0.2, 6, 12),
+        new THREE.MeshStandardMaterial({
+          color: 0x56742f,
+          roughness: 0.72
+        })
+      );
+      node.rotation.x = Math.PI / 2;
+      node.position.set(
+        segment.position.x,
+        segmentIndex * segmentHeight,
+        segment.position.z
+      );
+      node.castShadow = true;
+      culm.add(node);
+      if (segmentIndex > 2 && (segmentIndex % 2 === 0 || Math.random() > 0.68)) {
+        addBranch(
+          culm,
+          segmentIndex * segmentHeight,
+          Math.random() * Math.PI * 2,
+          Math.random() > 0.5 ? 1 : -1,
+          leafGeometry
+        );}}}
+
+  return culm;
+}
+function bamboo(x, z) {
+  const grove = new THREE.Group();
+  const culmCount = 15 + Math.floor(Math.random() * 7);
+
+  for (let i = 0; i < culmCount; i++) {
+    const distance = Math.sqrt(Math.random()) * 2.1;
+    const theta = Math.random() * Math.PI * 2;
+    const height = 5.2 + Math.random() * 4.1;
+    const radius = 0.075 + Math.random() * 0.045;
+
+    const culm = createCulm(
+      height,
+      radius,
+      (Math.random() - 0.5) * 0.11,
+      (Math.random() - 0.5) * 0.11
+    );
+
+    culm.position.set(
+      Math.cos(theta) * distance,
+      0,
+      Math.sin(theta) * distance
+    );
+
+    culm.rotation.y = Math.random() * Math.PI * 2;
+    grove.add(culm);
+  }
+
+  grove.position.set(x, 0, z);
+  farmGroup.add(grove);
+}
+bamboo(-85,-75);
+bamboo(-80,75);
+bamboo(85,-80);
+// CÂY DỪA
+function coconut(x, z) {
+  const g = new THREE.Group();
+  const trunkMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8d6e63,
+    roughness: 0.8
+  });
+  for (let i = 0; i < 8; i++) {
+    const segment = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.3, 1, 8),
+      trunkMaterial
+    );
+    segment.position.y = i + 0.5;
+    segment.rotation.z = 0.05 * i;
+    g.add(segment);}
+  for (let i = 0; i < 12; i++) {
+    const leaf = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.5, 6),
+      new THREE.MeshStandardMaterial({
+        color: 0x2f8c38,
+        side: THREE.DoubleSide
+      })
+    );
+    leaf.position.y = 8;
+    leaf.rotation.y = i * (Math.PI / 6);
+    leaf.rotation.z = -Math.PI / 4;
+    g.add(leaf);
+  }
+  g.position.set(x, 0, z);
+  farmGroup.add(g);
+}
+coconut(82,82);
+coconut(70,65);
+coconut(-70,-82);
+farmGroup.position.set(152,0.15,-80);
+scene.add(farmGroup);}
+function createEastSea() {
+    const seaGroup = new THREE.Group();
+    const waterGeo = new THREE.PlaneGeometry(800, 1200, 32, 32);
+    const waterMat = new THREE.MeshStandardMaterial({
+        color: 0x1565c0,
+        transparent: true,
+        opacity: 0.85,
+        roughness: 0.3,
+        metalness: 0.4
+    });
+    const water = new THREE.Mesh(waterGeo, waterMat);
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(420, 0.05, 0);
+    water.receiveShadow = true;
+    seaGroup.add(water);
+
+    // Bờ cát
+    const sand = new THREE.Mesh(
+        new THREE.PlaneGeometry(80, 1200),
+        new THREE.MeshStandardMaterial({ color: 0xe8d5a3, roughness: 1 })
+    );
+    sand.rotation.x = -Math.PI / 2;
+    sand.position.set(280, 0.08, 0);
+    seaGroup.add(sand);
+
+    // Tàu đơn giản
+    const ship = new THREE.Group();
+    const hull = new THREE.Mesh(
+        new THREE.BoxGeometry(28, 6, 10),
+        new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.7 })
+    );
+    hull.position.y = 2;
+    ship.add(hull);
+    const cabin = new THREE.Mesh(
+        new THREE.BoxGeometry(8, 5, 7),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 })
+    );
+    cabin.position.set(-4, 7, 0);
+    ship.add(cabin);
+    const mast = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.3, 18, 8),
+        new THREE.MeshStandardMaterial({ color: 0x3e2723 })
+    );
+    mast.position.set(4, 12, 0);
+    ship.add(mast);
+    const sail = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 12),
+        new THREE.MeshStandardMaterial({ color: 0xf5f5f5, side: THREE.DoubleSide })
+    );
+    sail.position.set(4, 12, 0);
+    sail.rotation.y = Math.PI / 2;
+    ship.add(sail);
+    ship.position.set(380, 0, 40);
+    ship.rotation.y = -0.3;
+    seaGroup.add(ship);
+
+    // Dừa không trái ven biển
+    function addCocoNoFruit(x, z) {
+        const g = new THREE.Group();
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8d6e63, roughness: 0.8 });
+        for (let i = 0; i < 8; i++) {
+            const segment = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1, 8), trunkMaterial);
+            segment.position.y = i + 0.5;
+            segment.rotation.z = 0.05 * i;
+            g.add(segment);
+        }
+        for (let i = 0; i < 12; i++) {
+            const leaf = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.5, 6),
+                new THREE.MeshStandardMaterial({ color: 0x2f8c38, side: THREE.DoubleSide })
+            );
+            leaf.position.y = 8;
+            leaf.rotation.y = i * (Math.PI / 6);
+            leaf.rotation.z = -Math.PI / 4;
+            g.add(leaf);
+        }
+        g.position.set(x, 0, z);
+        seaGroup.add(g);
+    }
+    addCocoNoFruit(260, 60);
+    addCocoNoFruit(255, 90);
+    addCocoNoFruit(270, -20);
+    addCocoNoFruit(265, -50);
+    addCocoNoFruit(250, 20);
+
+    scene.add(seaGroup);
+}
+function buildInteractiveEntities() {
+    const headGeo = new THREE.SphereGeometry(0.6, 16, 16);
+    const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.2);
+    function spawnNPC(x, z, color, type, label, extra = {}) {
+        const group = new THREE.Group();
+        const bMesh = new THREE.Mesh(bodyGeo, new THREE.MeshStandardMaterial({ color: color }));
+        bMesh.position.y = 1.1; bMesh.castShadow = true;
+        const hMesh = new THREE.Mesh(headGeo, new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+        hMesh.position.y = 2.6; hMesh.castShadow = true;
+        group.add(bMesh, hMesh);
+        if(extra.hat) {
+            const hat = new THREE.Mesh(new THREE.ConeGeometry(1.1, 0.6, 16), new THREE.MeshStandardMaterial({color: 0xe5c158}));
+            hat.position.y = 3.1; group.add(hat);
+        }
+
+        group.position.set(x, 0, z);
+        group.userData = { type: type, label: label, data: extra };
+        scene.add(group);
+        interactables.push(group);
+        return group;
+    }
+    spawnNPC(40, 75, 0x4caf50, 'A', 'Năm Giống', {hat: true});
+    spawnNPC(55, 85, 0x00bcd4, 'B', 'Ông Ba Mua Cá');
+    spawnNPC(15, 10, 0xe91e63, 'C', 'Tám Đen');
+    spawnNPC(30, 26, 0x9c27b0, 'D', 'Bảo Gay');
+    spawnNPC(-166, 8, 0xffeb3b,'E', 'Nhân viên Bách Hóa');
+    spawnNPC(50, 17, 0xff4081, 'F', 'Chị Kiều My');
+    spawnNPC(-74, -80, 0x795548, 'G', 'Sáu Điều');
+    spawnNPC(-45, 10, 0xff9800, 'H', 'Ông Tư Đô', {hat: true});
+    spawnNPC(80, 83, 0x607d8b, 'I', 'Chín Tư');
+    spawnNPC(80, 80, 0xffeb3b, 'currency_npc', 'Đổi Tiền?');
+    spawnNPC(105, -25, 0x8bc34a, 'J', 'Ông Bảy', {hat: true});
+spawnNPC(33.5, 39.82, 0x00bcd4, 'K', 'Ông Năm Bán Nhạc');
+spawnNPC(-60.33, 5.65, 0x8e44ad, 'L', 'Thầy Đồng');
+    
+    // Cậu Vàng - đứng trước tiệm net, biết đi
+    const cauVang = spawnNPC(80, 0, 0xffc107, 'cau_vang', 'Cậu Vàng');
+    cauVang.userData.walk = true;
+    cauVang.userData.baseX = 5;
+    cauVang.userData.baseZ = 18;
+    decorWalkers.push({ mesh: cauVang, baseX: 5, baseZ: 18, offset: 2.7, isCauVang: true });
+
+    baDongNPC = new THREE.Group();
+    const bdBody = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.8, 3), new THREE.MeshBasicMaterial({color: 0x111111}));
+    bdBody.position.y = 1.5;
+    const bdHead = new THREE.Mesh(new THREE.SphereGeometry(0.7), new THREE.MeshBasicMaterial({color: 0xaa0000}));
+    bdHead.position.y = 3.2;
+    baDongNPC.add(bdBody, bdHead);
+    baDongNPC.position.set(130, 0, -100);
+    scene.add(baDongNPC);
+    for(let i=0; i<7; i++) {
+        let cop = spawnNPC(-10 - i*15, 15, 0x1b5e20, 'police', `Công An Viên ${i+1}`);
+        policeNPCs.push(cop);
+    }
+    for(let i=0; i<4; i++) {
+        let reporter = spawnNPC(70 + i*4, 45, 0x3f51b5, 'journalist', `Phóng viên ${i+1}`);
+        journalists.push(reporter);
+    }
+    const camBox = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 3), new THREE.MeshStandardMaterial({color: 0x222}));
+    camBox.position.set(76, 2, 49); scene.add(camBox);
+
+const boxGeo = new THREE.BoxGeometry(2, 2, 2);
+const boxMat = new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.7 });
+const musicBoxMesh = new THREE.Mesh(boxGeo, boxMat);
+musicBoxMesh.position.set(36.1, 1, 33.59);
+musicBoxMesh.userData = { type: 'music_box', label: 'Hộp Nhạc Gỗ' };
+musicBoxMesh.castShadow = true;
+scene.add(musicBoxMesh);
+interactables.push(musicBoxMesh);
+
+    const riceMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+    for(let i=0; i<24; i++) {
+        const rice = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.5), riceMat);
+        rice.position.set(90 + Math.random() * 100, 1.25, -20 - Math.random() * 90);
+        rice.userData = { type: 'rice_crop' };
+        scene.add(rice);
+        interactables.push(rice);
+    }
+}
+
+
+// === XE LÁI ĐƯỢC ===
+let playerVehicle = null;
+let isDriving = false;
+let vehicleVelocity = new THREE.Vector3();
+
+function createDrivableCar(x, z) {
+    const car = new THREE.Group();
+    // Thân xe
+    const body = new THREE.Mesh(
+        new THREE.BoxGeometry(4.5, 1.6, 2.2),
+        new THREE.MeshStandardMaterial({ color: 0xe53935, metalness: 0.4, roughness: 0.4 })
+    );
+    body.position.y = 1.0;
+    body.castShadow = true;
+    car.add(body);
+    // Cabin
+    const cabin = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 1.2, 2.0),
+        new THREE.MeshStandardMaterial({ color: 0x37474f, metalness: 0.3 })
+    );
+    cabin.position.set(-0.4, 2.1, 0);
+    car.add(cabin);
+    // Bánh xe
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x212121 });
+    const wheelGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.4, 12);
+    [[1.5, 0.55, 1.2], [1.5, 0.55, -1.2], [-1.5, 0.55, 1.2], [-1.5, 0.55, -1.2]].forEach(([wx, wy, wz]) => {
+        const w = new THREE.Mesh(wheelGeo, wheelMat);
+        w.rotation.z = Math.PI / 2;
+        w.position.set(wx, wy, wz);
+        car.add(w);
+    });
+    // Đèn
+    const lightMat = new THREE.MeshBasicMaterial({ color: 0xffeb3b });
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.5), lightMat);
+    hl.position.set(2.3, 1.0, 0.7); car.add(hl);
+    const hr = hl.clone(); hr.position.z = -0.7; car.add(hr);
+
+    car.position.set(x, 0, z);
+    car.userData = { type: 'drivable_car', label: 'Xe hơi (F để lên/xuống)' };
+    scene.add(car);
+    interactables.push(car);
+    playerVehicle = car;
+    return car;
+}
+
+function toggleVehicle() {
+    if (!playerVehicle) return;
+    if (!isDriving) {
+        const dist = playerPos.distanceTo(playerVehicle.position);
+        if (dist > 8) {
+            showActionText('Xe ở quá xa, hãy lại gần hơn!');
+            return;
+        }
+        isDriving = true;
+        playerMesh.visible = false;
+        showActionText('🚗 Đã lên xe! WASD để lái, F để xuống.');
+    } else {
+        isDriving = false;
+        playerMesh.visible = true;
+        playerPos.set(playerVehicle.position.x + 3, 0, playerVehicle.position.z);
+        vehicleVelocity.set(0, 0, 0);
+        showActionText('Đã xuống xe.');
+        updateCameraPosition();
+    }
+}
+
+function updateVehicleDriving(dt) {
+    if (!isDriving || !playerVehicle) return;
+    const speed = 0.55;
+    const turn = 0.04;
+    let forward = 0, steer = 0;
+    if (moveF) forward += 1;
+    if (moveB) forward -= 0.5;
+    if (moveL) steer += 1;
+    if (moveR) steer -= 1;
+    if (joyY !== 0) forward += -joyY;
+    if (joyX !== 0) steer += -joyX;
+
+    if (Math.abs(forward) > 0.01) {
+        playerVehicle.rotation.y += steer * turn * Math.sign(forward || 1);
+    }
+    const dir = new THREE.Vector3(Math.sin(playerVehicle.rotation.y), 0, Math.cos(playerVehicle.rotation.y));
+    const next = playerVehicle.position.clone().addScaledVector(dir, forward * speed);
+    // Collision check
+    const box = new THREE.Box3().setFromCenterAndSize(next.clone().setY(1), new THREE.Vector3(4, 2, 2.5));
+    let blocked = false;
+    for (const c of colliderBoxes) {
+        if (box.intersectsBox(c)) { blocked = true; break; }
+    }
+    if (!blocked) {
+        playerVehicle.position.copy(next);
+        playerPos.copy(next);
+        playerPos.y = 0;
+    }
+    updateCameraPosition();
+}
+
+// --- NPC NỀN KHÔNG TƯƠNG TÁC: TẠO KHÔNG KHÍ ĐÔNG ĐÚC CHO XÃ PHƯỚC VINH ---
+function buildDecorativeNPCs() {
+    const palette = [0x795548,0x607d8b,0x8d6e63,0x546e7a,0xa1887f,0x78909c,0x6d4c41,0x455a64,0x8d99ae,0x9e9e9e,0xbcaaa4,0x90a4ae];
+    function makeFigure(color, seated) {
+        const group = new THREE.Group();
+        const bodyH = seated ? 1.0 : 2.2;
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, bodyH, 10), new THREE.MeshStandardMaterial({ color }));
+        body.position.y = bodyH / 2; body.castShadow = true;
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 10), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+        head.position.y = bodyH + 0.45; head.castShadow = true;
+        group.add(body, head);
+        return group;
+    }
+    // 5 NPC đứng cố định quanh khu trung tâm
+    const standSpots = [[18,62],[102,92],[-22,-6],[62,32],[-98,12]];
+    standSpots.forEach(([x, z]) => {
+        const fig = makeFigure(palette[Math.floor(Math.random() * palette.length)], false);
+        fig.position.set(x, 0, z);
+        scene.add(fig);
+    });
+
+    // 7 NPC đi lòng vòng ngẫu nhiên khắp xã
+    const walkSpots = [[10,50],[80,70],[-40,15],[130,90],[0,-30],[-70,-40],[150,40]];
+    walkSpots.forEach(([x, z], idx) => {
+        const fig = makeFigure(palette[Math.floor(Math.random() * palette.length)], false);
+        fig.position.set(x, 0, z);
+        scene.add(fig);
+        decorWalkers.push({ mesh: fig, baseX: x, baseZ: z, offset: idx * 1.3 });
+    });
+
+    // xe máy chạy qua lại trên các trục đường chính
+    const vehicleColors = [0x263238, 0xb71c1c, 0x1565c0, 0x2e7d32];
+    for (let i = 0; i < 7; i++) {
+        const veh = new THREE.Group();
+        const bikeBody = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 2.8), new THREE.MeshStandardMaterial({ color: vehicleColors[i] }));
+        bikeBody.position.y = 0.8; bikeBody.castShadow = true;
+        const driver = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0x37474f }));
+        driver.position.set(0, 1.8, 0);
+        veh.add(bikeBody, driver);
+        scene.add(veh);
+        decorVehicles.push({ mesh: veh, lane: i });}}
+function updateDecorativeNPCs() {
+    const t = Date.now() * 0.0007;
+    decorWalkers.forEach(w => {
+        let nx = w.baseX + Math.sin(t + w.offset) * 12;
+        let nz = w.baseZ + Math.cos(t * 0.8 + w.offset) * 12;
+        // Tránh xuyên tường: kiểm tra collider đơn giản
+        const testBox = new THREE.Box3().setFromCenterAndSize(
+            new THREE.Vector3(nx, 1.5, nz), new THREE.Vector3(1.2, 3, 1.2)
+        );
+        let blocked = false;
+        for (const box of colliderBoxes) {
+            if (testBox.intersectsBox(box)) { blocked = true; break; }
+        }
+        if (!blocked) {
+            w.mesh.position.x = nx;
+            w.mesh.position.z = nz;
+        }
+        // Cậu Vàng nhìn về hướng di chuyển nhẹ
+        if (w.isCauVang) {
+            w.mesh.lookAt(nx + 1, w.mesh.position.y, nz);
+        }
+    });
+    const tv = Date.now() * 0.00035;
+    decorVehicles.forEach(v => {
+        if (v.lane === 0) {
+            v.mesh.position.set(-260 + ((tv * 400 + v.lane * 150) % 520), 0, 20);
+            v.mesh.rotation.y = Math.PI / 2;
+        } else if (v.lane === 1) {
+            v.mesh.position.set(260 - ((tv * 400 + v.lane * 150) % 520), 0, 20);
+            v.mesh.rotation.y = -Math.PI / 2;
+        } else if (v.lane === 2) {
+            v.mesh.position.set(-70, 0, -280 + ((tv * 400 + v.lane * 150) % 480));
+        } else {
+            v.mesh.position.set(25, 0, 130 - ((tv * 400 + v.lane * 150) % 480));
+            v.mesh.rotation.y = Math.PI;}});}
+function buildMarketAmbience() {
+    const dirtGround = new THREE.Mesh(
+        new THREE.PlaneGeometry(140, 90),
+        new THREE.MeshStandardMaterial({ color: 0xb08968, roughness: 1 }));
+    dirtGround.rotation.x = -Math.PI / 2;
+    dirtGround.position.set(65, 0.06, 100);
+    scene.add(dirtGround);
+    const umbrellaMat = new THREE.MeshStandardMaterial({ color: 0x2f5233, roughness: 0.9 });
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+    for (let i = 0; i < 12; i++) {
+        let rx = 40 + (i % 4) * 15;
+        let rz = 70 + Math.floor(i / 4) * 12;
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3.2), poleMat);
+        pole.position.set(rx, 1.6, rz);
+        scene.add(pole);
+        const umbrella = new THREE.Mesh(new THREE.ConeGeometry(3.2, 1.4, 8), umbrellaMat);
+        umbrella.position.set(rx, 3.4, rz);
+        scene.add(umbrella);}
+    const bikeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
+    const bikeSpots = [[35,65],[95,75],[105,95],[50,120]];
+    bikeSpots.forEach(([x, z]) => {
+        const bike = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 2.6), bikeMat);
+        bike.position.set(x, 0.6, z);
+        scene.add(bike);
+    });
+    const basketColors = [0xff6f00, 0x33691e, 0xd32f2f];
+    for (let i = 0; i < 12; i++) {
+        const basket = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 1.4), new THREE.MeshStandardMaterial({ color: basketColors[i % basketColors.length] }));
+        basket.position.set(40 + (i % 6) * 16, 0.4, 66 + Math.floor(i / 6) * 50);
+        scene.add(basket);}}
+function createLocalPlayerMesh() {
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2.0, 10), new THREE.MeshStandardMaterial({ color: 0x2196f3 }));
+    body.position.y = 1.0; body.castShadow = true;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 10, 10), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+    head.position.y = 2.4; head.castShadow = true;
+    group.add(body, head);
+    group.visible = false;
+    scene.add(group);
+    return group;
+}
+function updateCameraRotation() {
+    pitch = Math.max(-Math.PI/2.4, Math.min(Math.PI/2.4, pitch));
+    if (!thirdPersonMode) {
+        camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+    }
+}
+function updateCameraPosition() {
+    if (!camera) return;
+    if (thirdPersonMode) {
+        const offsetX = Math.sin(yaw) * TP_DISTANCE;
+        const offsetZ = Math.cos(yaw) * TP_DISTANCE;
+        const height = Math.max(3, TP_HEIGHT - pitch * 4);
+        camera.position.set(playerPos.x + offsetX, height, playerPos.z + offsetZ);
+        camera.lookAt(playerPos.x, CONFIG.playerHeight * 0.65, playerPos.z);
+        if (playerMesh) {
+            playerMesh.visible = true;
+            playerMesh.position.set(playerPos.x, 0, playerPos.z);
+            playerMesh.rotation.y = yaw + Math.PI;
+        }
+    } else {
+        camera.position.set(playerPos.x, CONFIG.playerHeight, playerPos.z);
+        updateCameraRotation();
+        if (playerMesh) playerMesh.visible = false;
+    }
+}
+function setupDesktopControls() {
+    let isLocked = false;
+    document.body.addEventListener('click', () => { if(!isLocked) document.body.requestPointerLock(); });
+    document.addEventListener('pointerlockchange', () => { isLocked = document.pointerLockElement === document.body; });
+    document.addEventListener('mousemove', (e) => {
+        if(isLocked) {
+            yaw -= e.movementX * CONFIG.lookSpeedDesktop;
+            pitch -= e.movementY * CONFIG.lookSpeedDesktop;
+            updateCameraRotation();
+            updateCameraPosition();
+        }});
+    document.addEventListener('keydown', (e) => {
+        handleKey(e.code, true);
+        if(e.code === 'KeyE') checkInteraction();
+        if(e.code === 'KeyF') executeAttackAction();
+        if(e.code === 'KeyP') plantSeed();
+        if(e.code === 'KeyV') toggleVehicle();
+        });}
+function handleKey(code, isDown) {
+    if(code==='KeyW'||code==='ArrowUp') moveF = isDown; 
+    if(code==='KeyS'||code==='ArrowDown') moveB = isDown;
+    if(code==='KeyA'||code==='ArrowLeft') moveL = isDown; 
+    if(code==='KeyD'||code==='ArrowRight') moveR = isDown;}
+function setupMobileControls() {
+    const joyZone = document.getElementById("joystick-zone");
+    const stick = document.getElementById("stick");
+    joyZone.addEventListener("touchstart", handleJoy, {passive:false});
+    joyZone.addEventListener("touchmove", handleJoy, {passive:false});
+    joyZone.addEventListener("touchend", () => {
+        joyX = joyY = 0; stick.style.transform = `translate(0px, 0px)`;
+        moveF = moveB = moveL = moveR = false;});
+    function handleJoy(e) {
+        e.preventDefault();
+        const touch = e.changedTouches[0]; const rect = joyZone.getBoundingClientRect();
+        let dx = touch.clientX - rect.left - 70; let dy = touch.clientY - rect.top - 70;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist > 45) { dx = (dx/dist)*45; dy = (dy/dist)*45; }
+        stick.style.transform = `translate(${dx}px, ${dy}px)`;
+        joyX = dx/45; joyY = dy/45;
+        moveF = joyY < -0.2; moveB = joyY > 0.2;
+        moveL = joyX < -0.2; moveR = joyX > 0.2;}
+    const lookZone = document.getElementById("look-zone");
+    lookZone.addEventListener("touchstart", (e) => {
+        if(!lookTouchId) { lookTouchId = e.changedTouches[0].identifier; lastLookX = e.changedTouches[0].clientX; lastLookY = e.changedTouches[0].clientY; }
+    }, {passive:false});
+    lookZone.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        for(let touch of e.changedTouches) {
+      if(touch.identifier === lookTouchId) {
+                yaw -= (touch.clientX - lastLookX) * CONFIG.lookSpeedMobile;
+                pitch -= (touch.clientY - lastLookY) * CONFIG.lookSpeedMobile;
+                updateCameraRotation();
+                updateCameraPosition();
+                lastLookX = touch.clientX; lastLookY = touch.clientY;}}}, {passive:false});
+    lookZone.addEventListener("touchend", (e) => {
+        for(let touch of e.changedTouches) { if(touch.identifier === lookTouchId) lookTouchId = null; }});
+    btnInteract.addEventListener("click", checkInteraction);
+    btnAttack.addEventListener("click", executeAttackAction);
+    btnPlant.addEventListener("click", plantSeed);}
+const raycaster = new THREE.Raycaster();
+function checkInteraction() {
+    if(!targetNPC) return;
+    let type = targetNPC.userData.type;
+    let label = targetNPC.userData.label;
+    if(type === 'rice_crop') {
+        scene.remove(targetNPC);
+        interactables.splice(interactables.indexOf(targetNPC), 1);
+        inventory.rice += 0.45;
+        showActionText("🌾 Đã gặt thành công +450g Lúa chín!");
+        updatePrices();
+        return;}if (type === 'cashew_tree') {
+        const now = Date.now();
+        const lastHarvest = targetNPC.userData.lastHarvest || 0;
+        const COOLDOWN_MS = 5 * 60 * 1000; // 5 phút
+        if (now - lastHarvest < COOLDOWN_MS) {
+            const remain = Math.ceil((COOLDOWN_MS - (now - lastHarvest)) / 1000);
+            showActionText(`🥜 Cây điều đang hồi phục, còn ${remain}s nữa mới thu hoạch được!`);
+            return;
+        }
+        let harvested = Math.round((0.10 + Math.random() * 0.25) * 1000) / 1000; // 100–350g
+        inventory.cashew = Math.round((inventory.cashew + harvested) * 1000) / 1000;
+        targetNPC.userData.lastHarvest = now;
+        showActionText(`🥜 Bạn đã thu hoạch được ${(harvested * 1000).toFixed(0)}g Hạt điều thô! (hồi sau 5 phút)`);
+        updatePrices();
+        return;
+    }
+
+    switch(type) {
+                case 'currency_npc':
+            openCurrencyShop();
+            break;
+
+        case 'A':
+            let seedP = economy.currentPrice.seed;
+            if(inventory.money >= seedP) {
+                inventory.money -= seedP;
+                inventory.seeds += 1;
+                showActionText(`${label}: "Giao dịch xong! Gửi cháu 1 túi hạt giống giá ${seedP.toLocaleString()} đ."`);
+            } else {
+                showActionText(`${label}: "Không đủ tiền mua hạt giống rồi cháu ơi!Tại Cháu đó"`);
+            }
+            break;
+        case 'B':
+            if(inventory.fish > 0) {
+                let fishP = economy.currentPrice.fish * inventory.fish;
+                inventory.money += fishP;
+                showActionText(`${label}: "Cá sông ngon đó! Thu mua toàn bộ gửi cháu ${fishP.toLocaleString()} đ."`);
+                inventory.fish = 0;
+            } else {
+                showActionText(`${label}: "Có câu được con cá nào ở kênh địa phương đâu mà bán?khùng ghê"`);
+            }
+            break;
+        case 'C':
+            if(inventory.debt > 0) {
+                if(inventory.money >= inventory.debt) {
+                    inventory.money -= inventory.debt;
+                    inventory.debt = 0;
+                    showActionText(`${label}: "Tốt! Coi như mày biết điều, đã thanh toán sạch nợ gốc!"`);
+                } else {
+                    showActionText(`${label}: "Tiền mặt mày có không đủ trả nợ! Liệu hồn tao đập trận bây giờ, chơi gay nên không có tiền chứ gì"`);crimeAlert = true;}
+            } else {
+                showActionText(`${label}: "Hôm nay sạch nợ rồi, biến đi chỗ khác chơi!"`);}
+            break;
+        case 'D':
+            showActionText(`${label}: "Chào bro, tôi là Bảo học lớp 8 ở Phước Vinh và chơi gay :) và nhà mình nghèooooooooooooooooo lắm và nhà tôi sửa đồ hẹ hẹ!? (づ￣ ³￣)づ chơi gay với mình Không, tôi yêu bạn (¯︶¯) :&)"`);
+            break;
+        case 'E':
+            let noodleP = economy.currentPrice.noodle;
+            if(inventory.money >= noodleP) {
+                inventory.money -= noodleP;
+                inventory.noodles += 1;
+                showActionText(`${label}: "Cảm ơn quý khách đã ủng hộ BHX Ấp Phước Lợi! Mì gói của bạn hết ${noodleP.toLocaleString()} đ."`);
+            } else {
+                showActionText(`${label}: "Không đủ tiền mua mì gói rồi ạ nghèo ghê á!"`);}
+            break;
+        case 'F':
+            showActionText(`${label}: "Chào mừng đến Tiệm Tóc Kiều My! Hôm nay lạm phát cao quá, cắt ngắn gọn gàng đón mùa mới nha?:?)"`);
+            break;
+                case 'net_pc':
+            openInternetNetShop();
+            break;
+        case 'cau_vang':
+            showActionText('Cậu Vàng: "Chào anh/chị! Tiệm net đằng kia có game hay lắm, em hay ngồi canh xe ở đây nè."');
+            break;
+        case 'drivable_car':
+            toggleVehicle();
+            break;
+                case 'G':
+            if (inventory.cashew > 0) {
+                let exchangeMoney = Math.round((economy.currentPrice.cashew || 45000) * inventory.cashew);
+                inventory.money += exchangeMoney;
+                showActionText(`${label}: "Xưởng thu mua toàn bộ ${inventory.cashew.toFixed(1)}kg hạt điều thô! Gửi bạn ${exchangeMoney.toLocaleString()} đ!"`);
+                inventory.cashew = 0;} else if (inventory.rice > 0) {let riceMoney = Math.round(economy.currentPrice.rice * inventory.rice);
+                inventory.money += riceMoney;
+                showActionText(`${label}: "Xưởng thu đỡ bao lúa này làm lương thực công nhân, trả bạn ${riceMoney.toLocaleString()} đ. Lần sau mang HẠT ĐIỀU tới nhé!"`);
+                inventory.rice = 0;
+            } else {
+                showActionText(`${label}: "Xưởng đang gia công tách lụa hạt điều. Hãy ra Vườn Điều thu hoạch hạt điều thô rồi mang tới đây bán!"`);
+            }
+            break;
+
+        case 'H':
+            const stories = [
+                "Ngày xưa vùng biên giới Phước Vinh này hoang sơ lắm, giờ có chợ búa đông vui đường nhựa thẳng tắp.",
+                "Nghe giang hồ đồn khu đồng lúa phía đông có Ông Ba Đồng hay xuất hiện lúc chập tối hù dọa tụi nhỏ đó!",
+                "Lo mà nam mô đi con mà Cháu là ai vậy"];
+            let randStr = stories[Math.floor(Math.random() * stories.length)];
+            showActionText(`Ông Tư Đô kể: "${randStr}"`);
+            break;
+        case 'J':
+            if(inventory.rice > 0) {
+                let riceBuyP = economy.currentPrice.rice * inventory.rice;
+                inventory.money += riceBuyP;
+                showActionText(`${label}: "Lúa chín đẹp quá, Ông thu mua hết cho con nè, gửi con ${riceBuyP.toLocaleString()} đ!"`);
+                inventory.rice = 0;
+            } else {
+                showActionText(`${label}: "Con chưa có lúa nào để bán cho Ông hết á, ráng gặt thêm đi!"`);
+            }
+            break;
+        case 'I':
+            let appP = economy.currentPrice.appliance;
+            if(inventory.money >= appP) {
+                inventory.money -= appP;
+                inventory.appliances += 1;
+                showActionText(`${label}: "Đã bán cho bạn 1 chiếc Tivi siêu dễ hư giá ${appP.toLocaleString()} đ!"`);
+            } else {
+                showActionText(`${label}: "Đồ gia dụng đắt đỏ lắm, tích lũy thêm tiền đi.←_←"`);}
+            break;
+        case 'L':
+            if (document.pointerLockElement) {document.exitPointerLock();}
+            let wantToPlay = confirm('Tôi có thể đọc suy nghĩ của bạn, bạn có muốn chơi không?\n\n(Bấm "OK" để Có, "Cancel" để Không)');
+            if (wantToPlay) {
+                alert("Bước 1: bạn chọn một số bất kỳ có 3 chữ số\nBước 2: đảo ngược thứ tự các chữ số đó\nBước 3: Lấy số lớn hơn trừ đi số nhỏ hơn\nBước 4: Lấy kết quả đó, lại đảo ngược các chữ số của nó\nBước 5: Lấy hai kết quả vừa rồi cộng lại với nhau");
+                alert("Sau đó...\nBước 1: bạn chọn một số bất kỳ.\nBước 2: Cộng thêm 3.\nBước 3: Nhân kết quả đó với 2.\nBước 4: Trừ đi 4.\nBước 5: Chia cho 2.\nBước 6: Trừ đi số ban đầu mà bạn đã chọn.");
+                showActionText(`${label}: "Kết quả 2 phép tính đó lần lượt là 1089 và 1 haha"`);}
+            break;
+        case 'police':
+            if(crimeAlert) {
+                showActionText(`${label}: "Anh bị bắt giữ vì hành vi gây rối trật tự địa phương!"`);
+                resetPlayerState();
+            } else {
+                showActionText(`${label}: "Chúng tôi đang đi tuần tra kiểm soát an ninh trật tự Ấp Phước Lợi."`);}
+            break;
+        case 'journalist':
+            showActionText(`[Thời Sự Phước Vinh]: "Điểm tin hôm nay xã Phước Vinh ghi nhận sự biến động mạnh của chỉ số giá tiêu dùng..."`);
+            break;
+        case 'fishing_spot':
+            tryFishing();
+            break;
+        case 'K':
+            if (document.pointerLockElement) document.exitPointerLock();
+            openMusicShop();
+            break;
+        case 'player_bed':
+            sleepAtPlayerHouse();
+            break;
+        case 'player_stove':
+            cookAtPlayerHouse();
+            break;
+        case 'music_box':
+            if (heldTape !== null) {
+                playMusicBox(heldTape);
+                heldTape = null;
+            } else {
+                if (!musicBoxAudio.paused) {
+                    musicBoxAudio.pause();
+                    const bgM = document.getElementById("bgMusic");
+                    if (bgM) bgM.play();
+                    showActionText("🔇 Đã tắt hộp nhạc.");
+                } else {
+                    showActionText("Hộp nhạc trống. Hãy mua băng đĩa và mang tới đây để phát!");}}break;}updatePrices();}
+
+function sleepAtPlayerHouse() {
+const elapsed = (Date.now() - dayNightStart + dayNightSkipMs) % DAYNIGHT_CYCLE_MS;
+const sunAngle = (elapsed / DAYNIGHT_CYCLE_MS) * Math.PI * 2 - Math.PI / 2;
+    const sunHeight = Math.sin(sunAngle);
+    if (sunHeight > 0.05) {
+        showActionText("Chưa tới đêm. Giường chỉ dùng để ngủ qua đêm và sang ngày mới.");
+        return;}
+    const targetDawn = DAYNIGHT_CYCLE_MS * 0.25;
+if (elapsed < targetDawn) {dayNightSkipMs += targetDawn - elapsed;}
+    // Sang ngày mới thật sự
+    if (typeof nextEconomicDay === 'function') nextEconomicDay();
+    showActionText(`Bạn đã ngủ một giấc ngon lành. Chào ngày thứ ${economy.day}!`);
+}
+
+function cookAtPlayerHouse() {
+    if (inventory.fish > 0 && inventory.rice >= 0.25) {
+        inventory.fish -= 1;
+        inventory.rice = Math.round((inventory.rice - 0.25) * 100) / 100;
+        inventory.cookedMeals += 1;
+        showActionText("🍲 Bếp đã nấu xong 1 suất cơm cá!");
+    } else if (inventory.noodles > 0) {
+        inventory.noodles -= 1;
+        inventory.cookedMeals += 1;
+        showActionText("🍜 Bếp đã nấu xong 1 tô mì!");
+    } else {
+        showActionText("🍳 Bếp cần cá + 250g lúa hoặc ít nhất 1 gói mì.");
+    }
+    updatePrices();
+}
+
+function executeAttackAction() {
+    raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+    const intersects = raycaster.intersectObjects(interactables, true);
+    if(intersects.length > 0 && intersects[0].distance < 14) {
+        let obj = intersects[0].object;
+        while(obj.parent && obj.userData.type === undefined) { obj = obj.parent; }
+        if(obj.userData.type === 'creditor') {
+            showActionText("💥 BẠN ĐÃ TẤN CÔNG CHỦ NỢ! BÁO ĐỘNG KHẨN CẤP CHO ĐỘI CÔNG AN!");
+            crimeAlert = true;
+            copSpeed = 0.65;
+        } else {triggerHyperInflation();}}}
+const FIELD_CENTER = { x: 150, z: -60 };
+const FIELD_RADIUS = 90;
+function plantSeed() {
+    if(inventory.seeds <= 0) {
+        showActionText("🌱 Bạn không còn hạt giống nào để gieo, hãy mua thêm ở chợ!");
+        return;}
+    const pos = playerPos;
+    const distToField = Math.hypot(pos.x - FIELD_CENTER.x, pos.z - FIELD_CENTER.z);
+    if(distToField > FIELD_RADIUS) {
+        showActionText("🚜 Phải ra tới khu đồng lúa phía Đông mới gieo trồng được!");return;}
+    inventory.seeds -= 1;
+    const sproutMat = new THREE.MeshStandardMaterial({ color: 0x9ccc65 });
+    const sprout = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.2), sproutMat);
+    sprout.position.set(pos.x, 0.6, pos.z);
+    sprout.userData = { type: 'growing_rice', plantedAt: Date.now() };
+    scene.add(sprout);
+    interactables.push(sprout);
+    showActionText("🌱 Đã gieo hạt giống xuống đồng! Quay lại sau ít phút để gặt lúa chín.");
+    updatePrices();}
+function checkCropGrowth() {
+    const GROW_TIME_MS = 45000;
+    // Copy list because we may replace items while iterating
+    const list = interactables.slice();
+    list.forEach(obj => {
+        if (!obj || !obj.userData) return;
+        if (obj.userData.type === 'growing_rice' && Date.now() - obj.userData.plantedAt > GROW_TIME_MS) {
+            const riceGroup = new THREE.Group();
+            const stem = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08, 0.12, 2.2, 6),
+                new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 0.9 })
+            );
+            stem.position.y = 1.1;
+            riceGroup.add(stem);
+            for (let i = 0; i < 5; i++) {
+                const ear = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.18, 0.7, 6),
+                    new THREE.MeshStandardMaterial({ color: 0xffd54f, roughness: 0.6 })
+                );
+                ear.position.set((Math.random()-0.5)*0.35, 2.1 + Math.random()*0.2, (Math.random()-0.5)*0.35);
+                ear.rotation.x = (Math.random()-0.5)*0.3;
+                riceGroup.add(ear);
+            }
+            const parent = obj.parent || scene;
+            const pos = obj.position.clone();
+            parent.remove(obj);
+            const idx = interactables.indexOf(obj);
+            riceGroup.position.copy(pos);
+            riceGroup.userData = { type: 'rice_crop', label: 'Lúa chín' };
+            parent.add(riceGroup);
+            if (idx >= 0) interactables[idx] = riceGroup;
+            else interactables.push(riceGroup);
+        }
+    });
+}
+function resetPlayerState() {
+    crimeAlert = false;
+    inventory.money = Math.max(10000, Math.round(inventory.money * 0.05));
+    playerPos.set(0, 0, 80);
+    yaw = Math.PI; pitch = 0;
+    updateCameraPosition();
+    showActionText("👮 Bạn đã bị xử lý vi phạm hành chính. Khấu trừ 95% tiền mặt tiền án!");
+    updatePrices();}
+let dialogueLockUntil = 0;
+function showActionText(text) {
+    uiAction.innerText = text; uiAction.style.display = "block";
+    dialogueLockUntil = Date.now() + 7000;
+    setTimeout(() => { uiAction.style.display = "none"; }, 5000);}
+function updatePhysics() {
+    if (typeof isDriving !== 'undefined' && isDriving) {
+        updateCameraPosition();
+        return;
+    }
+    let dirZ = Number(moveF) - Number(moveB);
+    let dirX = Number(moveR) - Number(moveL);
+    if (dirZ === 0 && dirX === 0) {
+        updateCameraPosition();
+        return;
+    }
+    const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+    const right = new THREE.Vector3();
+    right.crossVectors(new THREE.Vector3(0, 1, 0), forward).normalize();
+    const moveVec = new THREE.Vector3();
+    moveVec.addScaledVector(forward, dirZ * CONFIG.speed);
+    moveVec.addScaledVector(right, dirX * CONFIG.speed);
+    const cx = playerPos.x; const cz = playerPos.z;
+    const cy = CONFIG.playerHeight / 2;
+    const pSize = new THREE.Vector3(1.8, CONFIG.playerHeight, 1.8);
+    if (isMultiplayer && p2pConn && p2pConn.open) {
+        p2pConn.send({
+            type: 'pos',
+            x: playerPos.x,
+            y: 0,
+            z: playerPos.z,
+            rY: yaw + Math.PI});}
+    const nextX = Math.max(-CONFIG.mapLimit, Math.min(CONFIG.mapLimit, cx + moveVec.x));
+    const boxX = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(nextX, cy, cz), pSize);
+    let blockedX = false;
+    for (const box of colliderBoxes) { if (boxX.intersectsBox(box)) { blockedX = true; break; } }
+    if (!blockedX) playerPos.x = nextX;
+    const nextZ = Math.max(-CONFIG.mapLimit, Math.min(CONFIG.mapLimit, cz + moveVec.z));
+    const boxZ = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(playerPos.x, cy, nextZ), pSize);
+    let blockedZ = false;
+    for (const box of colliderBoxes) { if (boxZ.intersectsBox(box)) { blockedZ = true; break; } }
+    if (!blockedZ) playerPos.z = nextZ;
+    updateCameraPosition();
+}
+function updateAIEntities() {
+    policeNPCs.forEach((cop, idx) => {
+        if(crimeAlert) {
+            let pPos = playerPos;
+            let cPos = cop.position;
+            let dir = new THREE.Vector3().subVectors(pPos, cPos);
+            dir.y = 0; dir.normalize();
+            const nextCop = cop.position.clone().addScaledVector(dir, copSpeed);
+            const copBox = new THREE.Box3().setFromCenterAndSize(nextCop.clone().setY(1.5), new THREE.Vector3(1.4, 3, 1.4));
+            let copBlocked = false;
+            for (const box of colliderBoxes) { if (copBox.intersectsBox(box)) { copBlocked = true; break; } }
+            if (!copBlocked) {
+                cop.position.copy(nextCop);
+            }
+            cop.lookAt(pPos.x, cop.position.y, pPos.z);
+            if(cPos.distanceTo(pPos) < 4) {
+                resetPlayerState();
+            }} else {
+            let time = Date.now() * 0.0006 + idx;
+            cop.position.x += Math.sin(time) * 0.12;
+            cop.position.z += Math.cos(time) * 0.08;}});
+    if(baDongNPC) {
+        baDongAngle += 0.01;
+        baDongNPC.position.x = 140 + Math.sin(baDongAngle) * 35;
+        baDongNPC.position.z = -60 + Math.cos(baDongAngle) * 35;
+        let distToPlayer = baDongNPC.position.distanceTo(playerPos);
+        if(distToPlayer < 15) {
+            document.getElementById("jumpscare").style.display = "flex";
+            setTimeout(() => {
+                document.getElementById("jumpscare").style.display = "none";
+            }, 800);
+            playerPos.x -= 20;
+            updateCameraPosition();
+        }
+    }
+}
+function updateCrosshairUI() {
+    raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+    const intersects = raycaster.intersectObjects(interactables, true);
+    if(intersects.length > 0 && intersects[0].distance < 15) {
+        let obj = intersects[0].object;
+        while(obj.parent && obj.userData.type === undefined) { obj = obj.parent; }
+        targetNPC = obj;
+        uiCrosshair.style.background = "#ff9800";
+        uiCrosshair.style.transform = "translate(-50%, -50%) scale(1.6)";
+        if(obj.userData.label && Date.now() > dialogueLockUntil) {
+            uiAction.innerText = `[${obj.userData.label}] \n Nhấn E để nói chuyện / F để tác động`;
+            uiAction.style.display = "block";}} else {
+        targetNPC = null;
+        uiCrosshair.style.background = "rgba(255,255,255,0.9)";
+        uiCrosshair.style.transform = "translate(-50%, -50%) scale(1)";
+        if(uiAction.style.display === "block" && uiAction.innerText.includes("Nhấn E") && Date.now() > dialogueLockUntil) {
+            uiAction.style.display = "none";}}}
+function openMusicShop() {
+    const shopDiv = document.getElementById("music-shop");
+    const listDiv = document.getElementById("song-list");
+    listDiv.innerHTML = "";
+    playlist.forEach(song => {
+        let btn = document.createElement("button");
+        btn.className = "song-btn";
+        btn.innerText = `${song.name} - ${song.price.toLocaleString()} đ`;
+        btn.onclick = () => buyTape(song);
+        listDiv.appendChild(btn);});
+    shopDiv.style.display = "block";}
+document.getElementById("close-shop").onclick = () => {
+    document.getElementById("music-shop").style.display = "none";};
+function buyTape(song) {
+    if (inventory.money >= song.price) {
+        inventory.money -= song.price;
+        heldTape = song;
+        updatePrices();
+        showActionText(`💿 Đã mua băng đĩa: ${song.name}. Hãy mang cắm vào Hộp Nhạc!`);
+        document.getElementById("music-shop").style.display = "none";} else {showActionText(`Thua, không đủ tiền mua băng ${song.name} rồi!`);}}
+function playMusicBox(song, fromRemote = false) {
+    const bgMusic = document.getElementById("bgMusic");
+    if (bgMusic) bgMusic.pause();
+    musicBoxAudio.src = song.file; 
+    musicBoxAudio.volume = 1.0;
+    musicBoxAudio.play().catch(e => console.log("Lỗi phát nhạc:", e));
+    showActionText(`🎶 HỘP NHẠC ĐANG PHÁT: ${song.name} 🎶`);
+    if (!fromRemote && isMultiplayer && p2pConn && p2pConn.open) {
+        p2pConn.send({ type: 'music', songId: song.id });}
+    musicBoxAudio.onended = () => {
+        showActionText("Hộp nhạc đã phát xong.");
+        if (bgMusic) bgMusic.play(); };}
+let peer = null;
+let p2pConn = null;
+let isMultiplayer = false;
+let remotePlayerMesh = null;
+let p2pRole = null;
+let p2pRoomCode = "";
+let p2pConnectionState = "disconnected";
+
+function setP2PStatus(text) {
+    const display = document.getElementById("roomCodeDisplay");
+    if (!display) return;
+    display.style.display = "block";
+    display.innerText = text;
+}
+
+function closeP2PConnection() {
+    try { p2pConn?.close(); } catch (_) {}
+    try { peer?.destroy(); } catch (_) {}
+    p2pConn = null;
+    peer = null;
+    isMultiplayer = false;
+    p2pRole = null;
+    p2pRoomCode = "";
+    p2pConnectionState = "disconnected";
+}
+
+function createRemotePlayer() {
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 2.2, 10), new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+    body.position.y = 1.1; body.castShadow = true;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 10), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+    head.position.y = 2.65; head.castShadow = true;
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0, 0, 256, 64);
+    ctx.fillStyle = '#00bcd4'; ctx.font = 'bold 30px Arial'; ctx.textAlign = 'center'; ctx.fillText('Người Chơi Khác', 128, 42);
+    const tex = new THREE.CanvasTexture(canvas);
+    const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.position.y = 3.6; sprite.scale.set(3, 0.75, 1);
+    group.add(body, head, sprite);
+    scene.add(group);
+    return group;
+}
+
+function setupMultiplayerEvents(connection) {
+    if (!connection) return;
+
+    p2pConn = connection;
+    p2pConnectionState = "connecting";
+    connection.on('open', () => {
+        isMultiplayer = true;
+        p2pConnectionState = "connected";
+        showActionText("KẾT NỐI P2P THÀNH CÔNG!");
+        displayChatMessage("Hệ thống", "Đã kết nối trực tiếp với người chơi khác!", "#4caf50");
+        if (!remotePlayerMesh) remotePlayerMesh = createRemotePlayer();
+    });
+
+    connection.on('data', (data) => {
+        if (!data || typeof data !== 'object') return;
+
+        if (data.type === 'pos') {
+            if (!remotePlayerMesh) remotePlayerMesh = createRemotePlayer();
+            remotePlayerMesh.position.set(Number(data.x) || 0, Number(data.y) || 0, Number(data.z) || 0);
+            remotePlayerMesh.rotation.y = Number(data.rY) || 0;
+        } else if (data.type === 'chat') {
+  const sender = data.sender === 'ai' ? 'AI' : 'Người chơi';
+            const color = data.sender === 'ai' ? '#00c6ff' : '#ffeb3b';
+            displayChatMessage(sender, String(data.msg ?? ''), color);
+        } else if (data.type === 'music') {
+            const song = playlist.find(s => s.id === data.songId);
+            if (song) playMusicBox(song, true);
+        } else if (data.type === 'env') {
+            if (Number.isFinite(Number(data.inflation))) economy.inflation = Number(data.inflation);
+            if (Number.isFinite(Number(data.day))) economy.day = Number(data.day);
+            updatePrices();
+            showActionText(`📅 Đồng bộ thế giới: Ngày ${economy.day}, Lạm phát ${Math.round(economy.inflation * 100)}%`);
+        }
+    });
+
+    connection.on('error', (error) => {
+        p2pConnectionState = "error";
+        console.error("P2P lỗi:", error);
+        showActionText("🔴 P2P lỗi: " + (error?.message || "không xác định"));
+    });
+
+    connection.on('close', () => {
+        p2pConnectionState = "disconnected";
+        showActionText("🔴 Người chơi kia đã ngắt kết nối.");
+        if (remotePlayerMesh) {
+            scene.remove(remotePlayerMesh);
+            remotePlayerMesh = null;
+        }
+        isMultiplayer = false;
+        p2pConn = null;
+    });
+}
+
+function setupPeerEvents(newPeer) {
+    peer = newPeer;
+    peer.on('open', (id) => {
+        p2pRoomCode = id;
+        setP2PStatus(`Mã phòng: ${id}\nGửi mã này cho bạn bè.`);
+        console.log('[P2P] Peer sẵn sàng:', id);
+    });
+
+    peer.on('connection', (conn) => {
+        p2pRole = 'host';
+        setupMultiplayerEvents(conn);
+    });
+
+    peer.on('error', (error) => {
+        console.error('[P2P] Peer error:', error);
+        p2pConnectionState = "error";
+    const message = error?.type === 'unavailable-id'
+            ? 'Mã phòng đang bận, hãy tạo phòng lại.'
+            : (error?.message || 'Không thể khởi tạo P2P.');
+        setP2PStatus(`❌ ${message}`);
+        showActionText('🔴 ' + message);
+    });
+
+    peer.on('disconnected', () => {
+        console.warn('[P2P] Signaling server bị ngắt. Đang kết nối lại...');
+        p2pConnectionState = "signaling-lost";
+        try { peer.reconnect(); } catch (_) {}
+    });
+}
+
+document.getElementById("hostBtn").addEventListener("click", async () => {
+    closeP2PConnection();
+    setP2PStatus("Đang tạo phòng...");
+    try {
+        const newPeer = new Peer(undefined, {secure: location.protocol === 'https:',
+            debug: 1
+        });
+        setupPeerEvents(newPeer);
+    } catch (error) {
+        console.error(error);
+        setP2PStatus("Không tạo được phòng: " + (error?.message || error));
+    }
+});
+
+document.getElementById("joinBtn").addEventListener("click", async () => {
+    const roomCode = document.getElementById("joinCodeInput").value.trim();
+    if (!roomCode) return alert("Vui lòng nhập mã phòng!");
+
+    closeP2PConnection();
+    setP2PStatus("Đang kết nối phòng...");
+
+    try {
+        const newPeer = new Peer(undefined, {
+  secure: location.protocol === 'https:',
+            debug: 1
+        });
+        setupPeerEvents(newPeer);
+        p2pRole = 'guest';
+
+        newPeer.on('open', () => {
+            const conn = newPeer.connect(roomCode, { reliable: true });
+            setupMultiplayerEvents(conn);
+            setP2PStatus("Đã vào hệ thống báo hiệu, chờ phòng trả lời...");
+        });
+    } catch (error) {
+        console.error(error);
+        setP2PStatus("Không kết nối được: " + (error?.message || error));}
+});
+
+const chatBtn = document.getElementById("chatBtn");
+const chatBox = document.getElementById("chatBox");
+const chatInput = document.getElementById("chatInput");
+const sendChatBtn = document.getElementById("sendChatBtn");
+const chatMessages = document.getElementById("chatMessages");
+chatBtn.onclick = () => {
+    chatBox.style.display = (chatBox.style.display === "flex") ? "none" : "flex";
+    if (chatBox.style.display === "flex" && document.pointerLockElement) {
+        document.exitPointerLock();}};
+function displayChatMessage(sender, msg, color = "white") {
+    const msgDiv = document.createElement("div");
+    msgDiv.innerHTML = `<b style="color:${color}">${sender}:</b> ${msg}`;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;}
+sendChatBtn.onclick = () => {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+    if (isMultiplayer && p2pConn && p2pConn.open) {
+        const lower = msg.toLowerCase();
+        const aiCommand =
+lower.startsWith('/ai')
+lower.startsWith('@ai')
+lower.startsWith('</ai_chat>')
+lower.startsWith('</ai>');
+if (aiCommand && window.aiChat) {let aiText = msg;
+if (lower.startsWith('</ai_chat>')) {
+aiText = msg.substring(10).trim();} else if (lower.startsWith('</ai>')) {
+aiText = msg.substring(5).trim();} else if (lower.startsWith('/ai')) {aiText = msg.substring(3).trim();} else if (lower.startsWith('@ai')) {aiText = msg.substring(3).trim();}
+            const reply = window.aiChat.getReply(aiText);
+            displayChatMessage("AI", reply, "#00c6ff");
+            p2pConn.send({
+                type: 'chat',
+                sender: 'ai',
+                msg: reply
+            });
+        } else {
+            p2pConn.send({
+                type: 'chat',
+                sender: 'player',
+                msg: msg
+            });
+            displayChatMessage("Bạn", msg, "#00bcd4");}} else {
+        displayChatMessage("Bạn", msg, "#00bcd4");
+        if (window.aiChat) {
+            const reply = window.aiChat.getReply(msg);
+            displayChatMessage("AI", reply, "#00c6ff");}}
+chatInput.value = "";};;
+chatInput.addEventListener("keypress", (e) => {
+    if(e.key === 'Enter') sendChatBtn.click();});
+function animate() {
+    requestAnimationFrame(animate);
+    updatePhysics();
+    updateVehicleDriving(0.016);
+    updateAIEntities();
+    updateCrosshairUI();
+    updateDecorativeNPCs();
+    updateDayNightSystem();
+    updateFootballKids();
+    updateFishingPond();
+    updateNightmarchers();
+const time = Date.now() * 0.0015;
+animatedCulms.forEach(culm => {
+  const wind = Math.sin(time + culm.userData.phase) * 0.04;
+  culm.rotation.z = culm.userData.baseRotationZ + wind;
+  culm.rotation.x = culm.userData.baseRotationX + wind * 0.5;
+});
+    checkCropGrowth();
+    updateDebugInfo()
+    checkAchievements();
+    renderer.render(scene, camera);}
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsModal = document.getElementById("settingsModal");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+const settingDebugToggle = document.getElementById("settingDebugToggle");
+const settingThirdPerson = document.getElementById("settingThirdPerson");
+const settingVolume = document.getElementById("settingVolume");
+const volValue = document.getElementById("volValue");
+const bgMusic = document.getElementById("bgMusic");
+settingsBtn.addEventListener("click", () => {if (document.pointerLockElement) {
+        document.exitPointerLock();}
+    settingsModal.style.display = "flex";
+    settingDebugToggle.checked = showDebug;
+    if (settingThirdPerson) settingThirdPerson.checked = thirdPersonMode;
+    settingVolume.value = bgMusic.volume;
+    volValue.innerText = Math.round(bgMusic.volume * 100) + "%";});
+closeSettingsBtn.addEventListener("click", () => {
+    settingsModal.style.display = "none";});
+settingDebugToggle.addEventListener("change", (e) => {
+    showDebug = e.target.checked;
+    if (showDebug) {
+        debugPanel.style.display = "block";
+        debugStatus.innerText = "Đang chơi (" + (selectedDevice === "desktop" ? "PC" : "Mobile") + ")";
+    } else {
+        debugPanel.style.display = "none";}
+    document.getElementById("showDebugToggle").checked = showDebug;});
+if (settingThirdPerson) {
+    settingThirdPerson.addEventListener("change", (e) => {
+        thirdPersonMode = e.target.checked;
+        updateCameraPosition();
+        showActionText(thirdPersonMode ? "📷 Đã bật góc nhìn thứ ba" : "📷 Đã tắt góc nhìn thứ ba");
+    });
+}
+settingVolume.addEventListener("input", (e) => {
+    bgMusic.volume = e.target.value;
+    volValue.innerText = Math.round(e.target.value * 100) + "%";});
+const DAYNIGHT_CYCLE_MS = 600000;
+const dayNightStart = Date.now();
+let dayNightSkipMs = 0;
+let envAmbientLight = null, envSunLight = null, envMoonLight = null;
+let sunSphere = null, moonSphere = null, starPoints = null;
+const uiDayPhase = document.getElementById("dayPhaseText");
+const SKY_NIGHT = new THREE.Color(0x060a1f), SKY_DAWN = new THREE.Color(0xff8a5c), SKY_DAY = new THREE.Color(0x95c8e2);
+const FOG_NIGHT = new THREE.Color(0x05070f), FOG_DAWN = new THREE.Color(0xffab91), FOG_DAY = new THREE.Color(0x95c8e2);
+const AMB_NIGHT = new THREE.Color(0x333a6e), AMB_DAWN = new THREE.Color(0xffcfa8), AMB_DAY = new THREE.Color(0xffffff);
+const SUN_DAWN  = new THREE.Color(0xffa366), SUN_DAY  = new THREE.Color(0xfffaee);
+const _tmpSky = new THREE.Color(), _tmpFog = new THREE.Color(), _tmpAmb = new THREE.Color(), _tmpSun = new THREE.Color();
+function buildDayNightSystem() {
+    scene.children.forEach(obj => {
+        if (obj.isAmbientLight) envAmbientLight = obj;
+        else if (obj.isDirectionalLight) envSunLight = obj;});
+    envMoonLight = new THREE.DirectionalLight(0x8fa8ff, 0);
+    scene.add(envMoonLight);
+    sunSphere = new THREE.Mesh(new THREE.SphereGeometry(14, 20, 20), new THREE.MeshBasicMaterial({ color: 0xfff4d6, fog: false }));
+    moonSphere = new THREE.Mesh(new THREE.SphereGeometry(10, 20, 20), new THREE.MeshBasicMaterial({ color: 0xdfe6ff, fog: false }));
+    scene.add(sunSphere, moonSphere);
+    const starCount = 500;
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+        const r = 480, theta = Math.random() * Math.PI * 2, phi = Math.random() * Math.PI * 0.48;
+        starPos[i*3]   = Math.cos(theta) * Math.sin(phi) * r;
+        starPos[i*3+1] = Math.cos(phi) * r;
+        starPos[i*3+2] = Math.sin(theta) * Math.sin(phi) * r;}
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    starPoints = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2, transparent: true, opacity: 0, fog: false }));
+    starPoints.frustumCulled = false;
+    scene.add(starPoints);}
+function updateDayNightSystem() {
+    if (!envSunLight) return;
+    const elapsed = (Date.now() - dayNightStart + dayNightSkipMs) % DAYNIGHT_CYCLE_MS;
+    const cycleT = elapsed / DAYNIGHT_CYCLE_MS;
+    const sunAngle = cycleT * Math.PI * 2 - Math.PI / 2; 
+    const moonAngle = sunAngle + Math.PI;
+    const sunHeight = Math.sin(sunAngle); 
+    const moonHeight = Math.sin(moonAngle);
+    const rising = Math.cos(sunAngle) >= 0;
+    const dist = 420;
+    envSunLight.position.set(Math.cos(sunAngle) * dist, sunHeight * dist, 0);
+    envMoonLight.position.set(Math.cos(moonAngle) * dist, moonHeight * dist, 0);
+    sunSphere.position.set(camera.position.x + Math.cos(sunAngle) * dist, sunHeight * dist, camera.position.z);
+    moonSphere.position.set(camera.position.x + Math.cos(moonAngle) * dist, moonHeight * dist, camera.position.z);
+    starPoints.position.set(camera.position.x, 0, camera.position.z);
+    sunSphere.visible = sunHeight > -0.08;
+    moonSphere.visible = moonHeight > -0.08;
+    envSunLight.intensity = THREE.MathUtils.clamp(sunHeight, 0, 1) * 1.1;
+    envMoonLight.intensity = THREE.MathUtils.clamp(moonHeight, 0, 1) * 0.3;
+    const edge = 0.35;
+    let ambIntensity;
+    if (sunHeight < 0) {
+        const t = THREE.MathUtils.clamp((sunHeight + edge) / edge, 0, 1);
+        _tmpSky.lerpColors(SKY_NIGHT, SKY_DAWN, t);
+        _tmpFog.lerpColors(FOG_NIGHT, FOG_DAWN, t);
+        _tmpAmb.lerpColors(AMB_NIGHT, AMB_DAWN, t);
+        _tmpSun.copy(SUN_DAWN);
+        ambIntensity = THREE.MathUtils.lerp(0.18, 0.55, t);
+    } else {const t = THREE.MathUtils.clamp(sunHeight / edge, 0, 1);
+        _tmpSky.lerpColors(SKY_DAWN, SKY_DAY, t);
+        _tmpFog.lerpColors(FOG_DAWN, FOG_DAY, t);
+        _tmpAmb.lerpColors(AMB_DAWN, AMB_DAY, t);
+        _tmpSun.lerpColors(SUN_DAWN, SUN_DAY, t);
+        ambIntensity = THREE.MathUtils.lerp(0.55, 0.65, t);}
+    scene.background.copy(_tmpSky);
+    scene.fog.color.copy(_tmpFog);
+    envAmbientLight.color.copy(_tmpAmb);
+    envAmbientLight.intensity = ambIntensity;
+    envSunLight.color.copy(_tmpSun);
+    starPoints.material.opacity = THREE.MathUtils.clamp(-sunHeight * 1.6, 0, 0.9);
+    if (uiDayPhase) {
+        if (sunHeight > 0.35) uiDayPhase.innerText = "☀️ Ban ngày";
+        else if (sunHeight > -0.35) uiDayPhase.innerText = rising ? "🌅 Bình minh" : "🌇 Hoàng hôn";
+        else uiDayPhase.innerText = "🌙 Ban đêm";}}
+const SOCCER_CENTER = { x: 6, z: 54 };
+const SOCCER_RADIUS_X = 9, SOCCER_RADIUS_Z = 7;
+const KID_JERSEY_COLORS = [0xff5252, 0xffd740, 0x448aff, 0x69f0ae, 0xff6e40];
+const footballKids = [];
+let footballBall = null;
+function spawnKidFigure(color) {
+    const group = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 1.1, 10), new THREE.MeshStandardMaterial({ color }));
+    body.position.y = 0.55; body.castShadow = true;
+    const shorts = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.32, 0.35, 10), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    shorts.position.y = 0.28;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+    head.position.y = 1.28; head.castShadow = true;
+    group.add(body, shorts, head);
+    scene.add(group);
+    return group;}
+function createSoccerBallTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f5f5f5'; ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#1a1a1a';
+    [[24,24],[96,24],[24,96],[96,96],[64,64],[64,8],[64,120]].forEach(([x,y]) => {
+        ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill();});
+    return new THREE.CanvasTexture(canvas);}
+function buildGoalPost(x, z) {
+    const group = new THREE.Group();
+    const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const postGeo = new THREE.CylinderGeometry(0.12, 0.12, 2.4, 8);
+    const postL = new THREE.Mesh(postGeo, postMat); postL.position.set(-1.6, 1.2, 0);
+    const postR = new THREE.Mesh(postGeo, postMat); postR.position.set(1.6, 1.2, 0);
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 3.3, 8), postMat);
+    bar.rotation.z = Math.PI / 2; bar.position.set(0, 2.4, 0);
+    group.add(postL, postR, bar);
+    group.position.set(x, 0, z);
+    scene.add(group);}
+function buildFootballKids() {
+    footballBall = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({ map: createSoccerBallTexture() }));
+    scene.add(footballBall);
+    const kidCount = 5;
+    for (let i = 0; i < kidCount; i++) {
+        const kid = spawnKidFigure(KID_JERSEY_COLORS[i % KID_JERSEY_COLORS.length]);
+        footballKids.push({
+            mesh: kid,
+            chaseAngle: (i / kidCount) * Math.PI * 2,
+            followDist: 2.6 + Math.random() * 1.6,
+            bobPhase: Math.random() * Math.PI * 2,
+            speedVar: 0.8 + Math.random() * 0.5});}
+    buildGoalPost(SOCCER_CENTER.x, SOCCER_CENTER.z - SOCCER_RADIUS_Z - 3);
+    buildGoalPost(SOCCER_CENTER.x, SOCCER_CENTER.z + SOCCER_RADIUS_Z + 3);}
+function updateFootballKids() {
+    if (!footballBall) return;
+    const t = Date.now() * 0.001;
+    const bx = SOCCER_CENTER.x + Math.sin(t * 0.7) * SOCCER_RADIUS_X;
+    const bz = SOCCER_CENTER.z + Math.sin(t * 1.1 + 1.3) * SOCCER_RADIUS_Z;
+    footballBall.position.set(bx, 0.4 + Math.abs(Math.sin(t * 6)) * 0.25, bz);
+    footballBall.rotation.x += 0.18;
+    footballBall.rotation.z += 0.12;
+    footballKids.forEach(k => {
+        const angle = k.chaseAngle + t * 0.6 * k.speedVar;
+        const tx = bx + Math.cos(angle) * k.followDist;
+        const tz = bz + Math.sin(angle) * k.followDist;
+        k.mesh.position.x = tx;
+        k.mesh.position.z = tz;
+        k.mesh.position.y = Math.abs(Math.sin(t * 9 * k.speedVar + k.bobPhase)) * 0.3;
+        k.mesh.lookAt(bx, k.mesh.position.y, bz);});}
+const POND_CENTER = { x: -100.14, z: -20.48 };
+const POND_RADIUS = 13;
+const pondFish = [];
+let isFishing = false;
+let lastFishTime = -999999;
+const FISHING_COOLDOWN_MS = 15000;
+function buildFishingPond() {
+    const bank = new THREE.Mesh(
+        new THREE.CircleGeometry(POND_RADIUS + 2.5, 28),
+        new THREE.MeshStandardMaterial({ color: 0x8d6e4f, roughness: 1 }));
+    bank.rotation.x = -Math.PI / 2;
+    bank.position.set(POND_CENTER.x, 0.04, POND_CENTER.z);
+    scene.add(bank);
+    const water = new THREE.Mesh(
+        new THREE.CircleGeometry(POND_RADIUS, 28),
+        new THREE.MeshStandardMaterial({ color: 0x2389da, roughness: 0.25, metalness: 0.15, transparent: true, opacity: 0.88 })
+    );
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(POND_CENTER.x, 0.09, POND_CENTER.z);
+    scene.add(water);
+    const fishColors = [0xff7043, 0xbdbdbd, 0xffca28, 0x8d6e63];
+    for (let i = 0; i < 7; i++) {
+        const group = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 6), new THREE.MeshStandardMaterial({ color: fishColors[i % fishColors.length] }));
+        body.rotation.z = Math.PI / 2;
+        const tail = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.22, 4), new THREE.MeshStandardMaterial({ color: fishColors[i % fishColors.length] }));
+        tail.rotation.z = -Math.PI / 2; tail.position.x = -0.35;
+        group.add(body, tail);
+        scene.add(group);
+        pondFish.push({
+            mesh: group,
+            baseAngle: Math.random() * Math.PI * 2,
+            orbitRadius: 2 + Math.random() * (POND_RADIUS - 4),
+            speed: 0.3 + Math.random() * 0.5,
+            depth: -0.25 - Math.random() * 0.6});}
+    const dock = new THREE.Group();
+    const postMat = new THREE.MeshStandardMaterial({ color: 0x6d4c41 });
+    const post1 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.6, 8), postMat); post1.position.set(-1, 0.8, 0);
+    const post2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.6, 8), postMat); post2.position.set(1, 0.8, 0);
+    const plank = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.15, 1.4), postMat); plank.position.set(0, 1.65, 0);
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.2, 6), new THREE.MeshStandardMaterial({ color: 0x3e2723 }));
+    rod.rotation.z = Math.PI / 3.2; rod.position.set(0.5, 2.3, 0);
+    dock.add(post1, post2, plank, rod);
+    dock.position.set(POND_CENTER.x + POND_RADIUS + 1.5, 0, POND_CENTER.z);
+    dock.userData = { type: 'fishing_spot', label: 'Điểm câu cá' };
+    scene.add(dock);
+    interactables.push(dock);}
+function updateFishingPond() {
+    const t = Date.now() * 0.001;
+    pondFish.forEach(f => {
+        const angle = f.baseAngle + t * f.speed;
+        f.mesh.position.set(POND_CENTER.x + Math.cos(angle) * f.orbitRadius, f.depth, POND_CENTER.z + Math.sin(angle) * f.orbitRadius);
+        f.mesh.rotation.y = -angle + Math.PI / 2;});}
+function tryFishing() {
+    if (isFishing) return;
+    const now = Date.now();
+    if (now - lastFishTime < FISHING_COOLDOWN_MS) {
+        const waitSec = Math.ceil((FISHING_COOLDOWN_MS - (now - lastFishTime)) / 1000);
+        showActionText(`🎣 Cần câu còn đang nghỉ, đợi thêm ${waitSec} giây nữa rồi câu tiếp`);return;}
+    isFishing = true;
+    showActionText("🎣 Thả câu xuống ao... chờ xem có cá cắn câu không");
+    setTimeout(() => {
+        isFishing = false;
+        lastFishTime = Date.now();
+        if (Math.random() < 0.75) {
+            const caught = 1 + Math.floor(Math.random() * 2);
+            inventory.fish += caught;
+            showActionText(`🐟 Câu được ${caught} con cá tươi rói từ ao làng!`);
+        } else {showActionText("Hụt mất rồi, cá lanh quá! Thử câu lại xem sao.");}updatePrices();}, 2500);}
+function buildNightmarchers() {
+    nmGroup = new THREE.Group();
+    nmGroup.visible = false;
+    scene.add(nmGroup);
+    const bodyGeo  = new THREE.CylinderGeometry(0.42, 0.62, 3.0, 8);
+    const headGeo  = new THREE.SphereGeometry(0.52, 10, 10);
+    const torchGeo = new THREE.CylinderGeometry(0.065, 0.115, 1.3, 6);
+    const helmetGeo= new THREE.CylinderGeometry(0.35, 0.58, 0.55, 8);
+    const flameGeo = new THREE.SphereGeometry(0.24, 8, 8);
+    const spearGeo = new THREE.CylinderGeometry(0.045, 0.045, 3.8, 6);
+    const tipGeo   = new THREE.ConeGeometry(0.14, 0.55, 6);
+    for (let i = 0; i < NM_COUNT; i++) {
+        const nm = new THREE.Group();
+        const bodyMat = new THREE.MeshStandardMaterial({
+            color: 0x0c1830, emissive: 0x06101f,
+            transparent: true, opacity: 0.80 + Math.random() * 0.12});
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 1.5; body.castShadow = false;
+        const headMat = new THREE.MeshStandardMaterial({
+            color: 0x0a152a, emissive: 0x0d1f3a,
+            transparent: true, opacity: 0.88});
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 3.2;
+        const helmetMat = new THREE.MeshStandardMaterial({
+            color: 0x1a0a00, emissive: 0x0d0500, roughness: 0.9,
+            transparent: true, opacity: 0.92});
+        const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+        helmet.position.y = 3.65;
+        const spearMat = new THREE.MeshStandardMaterial({ color: 0x2a1500, emissive: 0x100800 });
+        const spear = new THREE.Mesh(spearGeo, spearMat);
+        spear.position.set(-0.55, 1.9, 0); spear.rotation.z = Math.PI / 14;
+        const tipMat = new THREE.MeshStandardMaterial({ color: 0x606060, metalness: 0.7, roughness: 0.3 });
+        const tip = new THREE.Mesh(tipGeo, tipMat);
+        tip.position.set(-0.55 - Math.sin(Math.PI/14)*1.9, 1.9 + Math.cos(Math.PI/14)*1.9, 0);
+        const torchMat = new THREE.MeshStandardMaterial({ color: 0x3d1a00 });
+        const torchMesh = new THREE.Mesh(torchGeo, torchMat);
+        torchMesh.position.set(0.7, 1.85, 0); torchMesh.rotation.z = Math.PI / 11;
+        const hue = 0.06 + Math.random() * 0.04; 
+        const flameMat = new THREE.MeshBasicMaterial({
+            color: new THREE.Color().setHSL(hue, 1, 0.55),
+            transparent: true, opacity: 0.95});
+        const flame = new THREE.Mesh(flameGeo, flameMat);
+        flame.position.set(0.7 + Math.sin(Math.PI/11)*0.65, 1.85 + Math.cos(Math.PI/11)*0.65, 0);
+        nm.add(body, head, helmet, spear, tip, torchMesh, flame);
+        const rowOff = (i - (NM_COUNT - 1) / 2) * 2.4;
+        nm.position.set(NM_X_START, 0, NM_PATH_Z + rowOff);
+        nm.userData = { bobPhase: (i / NM_COUNT) * Math.PI * 2, flameRef: flame, idx: i };
+        nmGroup.add(nm);
+        nightmarchers.push(nm);
+        if (i % 2 === 0) {
+            const tLight = new THREE.PointLight(0xff5500, 0, 20, 1.5);
+            scene.add(tLight);
+            nmTorches.push({ light: tLight, marcherRef: nm });}}}
+function updateNightmarchers() {
+    if (!nmGroup || nightmarchers.length === 0) return;
+    const elapsed  = (Date.now() - dayNightStart) % DAYNIGHT_CYCLE_MS;
+    const sunAngle = (elapsed / DAYNIGHT_CYCLE_MS) * Math.PI * 2 - Math.PI / 2;
+    const sunHeight = Math.sin(sunAngle);
+    const isNight   = sunHeight < -0.28;
+    if (!isNight) {
+        if (nmActive) {
+            nmActive = false;
+            nmGroup.visible = false;
+            nmAlertShown = false;
+            nmStopDrums();
+            nmTorches.forEach(t => { t.light.intensity = 0; });
+            document.getElementById("nmOverlay").style.display  = "none";
+            document.getElementById("nmWarnText").style.display = "none";}return;}
+    if (!nmActive) {
+        nmActive = true;
+        nmGroup.visible = true;
+        nmProgress = Math.random() * 0.15;
+        nmDir = 1;}
+    const t = Date.now() * 0.001;
+    nmProgress += NM_SPEED * nmDir;
+    if (nmProgress >= 1.0) { nmDir = -1; nmProgress = 1.0; }
+    if (nmProgress <= 0.0) { nmDir =  1; nmProgress = 0.0; }
+    const baseX     = THREE.MathUtils.lerp(NM_X_START, NM_X_END, nmProgress);
+    const marchYaw  = nmDir > 0 ? Math.PI / 2 : -Math.PI / 2;
+    nightmarchers.forEach((nm, i) => {
+        const rowOff = (i - (NM_COUNT - 1) / 2) * 2.4;
+        nm.position.x = baseX;
+        nm.position.z = NM_PATH_Z + rowOff;
+        nm.position.y = 0.3 + Math.sin(t * 1.7 + nm.userData.bobPhase) * 0.28;
+        nm.rotation.y = marchYaw;
+        const fl = nm.userData.flameRef;
+        if (fl) {
+            fl.scale.setScalar(0.82 + Math.sin(t * 14 + nm.userData.bobPhase) * 0.28);
+            fl.material.opacity = 0.7 + Math.sin(t * 10 + i * 0.8) * 0.22;}});
+    nmTorches.forEach((to, i) => {
+        const m = to.marcherRef;
+        to.light.position.set(m.position.x + 0.7, m.position.y + 1.9, m.position.z);
+        to.light.intensity = 1.6 + Math.sin(t * 11 + i * 2.1) * 0.55;
+        to.light.color.setHSL(0.06 + Math.sin(t * 3 + i) * 0.02, 1, 0.52);});}
+</script>
+<script src="JavaScript/MultiProtocolDataTransfer.js"></script>
+<script src="JavaScript/GameIntegration.js"></script>
+<script src="JavaScript/AI-CHAT_GAME.js"></script>
+<script src="JavaScript/mod.js"></script>
+</body>
+</html>

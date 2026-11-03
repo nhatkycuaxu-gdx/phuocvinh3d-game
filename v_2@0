@@ -1,0 +1,19 @@
+Bản 2.0 là 1 bản kỳ lạ nó có nhiều điều mới hơn và cũng có điều kỳ lạ hơn.
+Xóa cái gì: Rất nhiều bao gồm xóa vài tính năng như: Cờ Vua,Nút "G"… chi tiết ở phần sau.
+__Why__
+# Cờ Vua - Tại sao Xóa chúng?
+Nguyên nhân: Lỗi Nút Đóng Và NPC chả thật sự chơi cờ Vua.
+Cách Sửa Ban Đầu: đã cố gắng làm hết sức mhưng thất bại hãm hại.
+# Nút "G" - Tại sao Xóa Chúng?
+Nguyên nhân: Nó trong Chương trình "Xóa Những Thứ Gây Phiền"
+Cách Sửa ban đầu: Đọc Trong mục "Chương Trình"
+__Bug__
+Trong Flie (.log)
+Trích dẫn: <1. The modding system does not work as intended>
+__Cái Nào nhiều hơn__
+Xét về mặt xóa và thêm tính năng (Không phải số code) Thì Xóa Nhiều hơn Thêm.
+__Chương Trình__
+1. Chương Trình "Xóa Những Thứ Gây Phiền"
+Nó là 1 loại Chương Trình LOẠI BỎ những thứ gây phiền và gây lag.Đoàn Huaka'i (Đoàn Linh hồn) là mục tiêu vì khi lại gần nó sẽ có rất nhiều bản thông báo vừa lag vừa phiền nhưng chúng tôi không xóa luôn npc chúng tôi chỉ xóa những tính năng "phiền" của nó vì trong bản 1.0 chúng ta có nút G để đối Phó với Đoàn Huaka'i nhưng vì nó chỉ còn xuất hiện vào ban đêm rồi đi theo đường chỉ dẫn thì nút "G" cực kỳ vô dụng nên nút "G" chính thức được xóa khỏi game.
+__End__
+Đó là những gì đã xảy ra với bản 2.0 cho thấy sự khác biệt với bản khác thế nào.

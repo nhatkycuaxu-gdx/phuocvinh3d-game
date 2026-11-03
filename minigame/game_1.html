@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cờ Caro Master - Chơi Với Bot AI</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti cho hiệu ứng chiến thắng -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        },
+                        playerX: '#ef4444',
+                        playerO: '#3b82f6'
+                    },
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                        display: ['Comfortaa', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Tùy chỉnh cuộn bàn cờ trên mobile */
+        .board-container {
+            overflow: auto;
+            max-width: 100%;
+            max-height: 70vh;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        
+        .board-container::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .board-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        /* Lưới bàn cờ */
+        .board-grid {
+            display: grid;
+            gap: 1px;
+            background-color: #94a3b8;
+            border: 2px solid #64748b;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell {
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            position: relative;
+        }
+
+        .cell:hover:not(.occupied) {
+            background-color: #f1f5f9;
+        }
+
+        /* Hiệu ứng quân cờ mới đánh */
+        .cell-last-move::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #eab308;
+            border-radius: 50%;
+            top: 2px;
+            right: 2px;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Đường thắng cuộc */
+        .cell-winning {
+            background-color: #fef08a !important;
+            animation: highlight 0.6s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        @keyframes highlight {
+            from { background-color: #fef08a; }
+            to { background-color: #fde047; }
+        }
+
+        /* Animation xuất hiện X/O */
+        .pop-in {
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Header Navigation -->
+    <header class="bg-white shadow-sm border-b border-slate-200 py-3 px-4 sm:px-8">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-sky-500 to-indigo-600 text-white p-2.5 rounded-xl shadow-md">
+                    <i class="fa-solid me-0 fa-gamepad text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-bold text-xl sm:text-2xl text-slate-800 leading-tight">Cờ Caro Master</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Trải nghiệm thách thức với Bot AI đỉnh cao</p>
+                </div>
+            </div>
+
+            <!-- Controls Header: Sound & Reset Stats -->
+            <div class="flex items-center space-x-2">
+                <button id="btnSound" class="p-2.5 text-slate-600 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition" title="Bật/Tắt âm thanh">
+                    <i class="fa-solid fa-volume-high text-lg" id="soundIcon"></i>
+                </button>
+                <button id="btnHelp" class="p-2.5 text-slate-600 hover:text-sky-600 hover:bg-slate-100 rounded-lg transition" title="Hướng dẫn">
+                    <i class="fa-solid fa-circle-question text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 flex flex-col lg:flex-row gap-6 items-start justify-center">
+
+        <!-- Panel Cài đặt & Thống kê (Cột trái) -->
+        <div class="w-full lg:w-80 flex flex-col gap-4">
+            
+            <!-- Cài đặt Trận đấu -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Cấu hình trò chơi
+                </h2>
+
+                <!-- Chọn kích thước bàn cờ -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Kích thước bàn cờ</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="btn-board-size active bg-sky-50 border-2 border-sky-500 text-sky-700 py-2 rounded-xl text-sm font-bold flex flex-col items-center" data-size="3">
+                            <span>3 x 3</span>
+                            <span class="text-[10px] font-normal text-slate-500">Nối 3 (Tic Tac Toe)</span>
+                        </button>
+                        <button class="btn-board-size bg-slate-50 border-2 border-transparent hover:border-slate-300 text-slate-700 py-2 rounded-xl text-sm font-bold flex flex-col items-center" data-size="15">
+                            <span>15 x 15</span>
+                            <span class="text-[10px] font-normal text-slate-500">Nối 5 (Caro Gomoku)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chọn Chế độ chơi -->
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Chế độ chơi</label>
+                    <select id="modeSelect" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="pve">Đấu với Máy (Bot AI)</option>
+                        <option value="pvp">Chơi 2 Người (Cùng máy)</option>
+                    </select>
+                </div>
+
+                <!-- Chọn Độ khó Bot (Nếu PVE) -->
+                <div id="difficultyGroup" class="mb-5">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Cấp độ Bot AI</label>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button class="btn-diff bg-slate-100 border text-slate-600 py-1.5 rounded-lg text-xs font-bold" data-diff="easy">Dễ</button>
+                        <button class="btn-diff active bg-sky-500 border-sky-500 text-white py-1.5 rounded-lg text-xs font-bold" data-diff="medium">Vừa</button>
+                        <button class="btn-diff bg-slate-100 border text-slate-600 py-1.5 rounded-lg text-xs font-bold" data-diff="hard">Khó AI</button>
+                    </div>
+                </div>
+
+                <!-- Nút Ván Mới -->
+                <button id="btnNewGame" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Ván Mới
+                </button>
+            </div>
+
+            <!-- Bảng Thống kê Scoreboard -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy"></i> Thống kê tỉ số
+                    </h2>
+                    <button id="btnResetScore" class="text-xs text-slate-400 hover:text-red-500 transition" title="Đặt lại điểm">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-red-50 p-2.5 rounded-xl border border-red-100">
+                        <div class="text-xs font-bold text-red-500 uppercase" id="scoreXLabel">Người X</div>
+                        <div class="text-2xl font-black text-red-600 mt-0.5" id="scoreX">0</div>
+                    </div>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <div class="text-xs font-bold text-slate-500 uppercase">Hòa</div>
+                        <div class="text-2xl font-black text-slate-600 mt-0.5" id="scoreDraw">0</div>
+                    </div>
+                    <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-100">
+                        <div class="text-xs font-bold text-blue-500 uppercase" id="scoreOLabel">Bot O</div>
+                        <div class="text-2xl font-black text-blue-600 mt-0.5" id="scoreO">0</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bàn cờ & Trạng thái (Cột phải) -->
+        <div class="w-full lg:flex-1 flex flex-col items-center">
+            
+            <!-- Thanh Trạng Thái Trận Đấu -->
+            <div class="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4 flex flex-wrap justify-between items-center gap-3">
+                
+                <!-- Người tới lượt -->
+                <div class="flex items-center space-x-3">
+                    <div id="turnIndicator" class="w-10 h-10 rounded-xl flex items-center justify-center text-xl font-black bg-red-100 text-red-500 shadow-inner">
+                        X
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-bold uppercase">Lượt hiện tại</div>
+                        <div id="statusText" class="font-bold text-slate-800 text-sm sm:text-base">Lượt của Người (X)</div>
+                    </div>
+                </div>
+
+                <!-- Đếm Lượt & Thời gian -->
+                <div class="flex items-center gap-4 text-sm font-semibold text-slate-600">
+                    <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg" title="Số nước đi">
+                        <i class="fa-solid fa-footsteps text-slate-400"></i>
+                        <span id="moveCount">0</span> lượt
+                    </div>
+                    <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg" title="Thời gian chơi">
+                        <i class="fa-regular fa-clock text-slate-400"></i>
+                        <span id="timer">00:00</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Khung Chứa Bàn Cờ -->
+            <div class="w-full flex justify-center bg-white p-3 sm:p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div class="board-container relative">
+                    <div id="board" class="board-grid"></div>
+                </div>
+            </div>
+
+            <!-- Chú thích hỗ trợ người chơi -->
+            <div class="mt-3 text-xs text-slate-400 flex items-center gap-4">
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Người chơi (X)</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Máy / Người 2 (O)</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block"></span> Nước mới nhất</span>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Modal Thông Báo Kết Quả -->
+    <div id="resultModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl transform scale-90 transition-transform duration-300" id="modalContent">
+            <div id="modalIcon" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-amber-100 text-amber-500">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h3 id="modalTitle" class="text-2xl font-black text-slate-800 mb-1 font-display">Chiến Thắng!</h3>
+            <p id="modalDesc" class="text-slate-500 text-sm mb-6">Người chơi X đã xuất sắc giành chiến thắng.</p>
+            
+            <div class="flex gap-3">
+                <button id="btnModalClose" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-sm">
+                    Xem Bàn Cờ
+                </button>
+                <button id="btnModalReplay" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 rounded-xl shadow-md transition text-sm">
+                    Chơi Tiếp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Hướng Dẫn -->
+    <div id="helpModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-sky-500"></i> Hướng dẫn luật chơi
+                </h3>
+                <button id="btnCloseHelp" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-sm text-slate-600">
+                <p><strong>1. Chế độ 3x3 (Tic-Tac-Toe):</strong> Đặt 3 quân cờ liên tiếp theo hàng ngang, hàng dọc hoặc đường chéo để giành chiến thắng.</p>
+                <p><strong>2. Chế độ 15x15 (Cờ Caro chuẩn):</strong> Đặt đủ 5 quân cờ liên tiếp theo chiều ngang, dọc hoặc chéo để thắng.</p>
+                <p><strong>3. Độ khó Bot AI:</strong>
+                    <br>- <em>Dễ:</em> Đánh ngẫu nhiên.
+                    <br>- <em>Trung bình:</em> Biết chặn các chuỗi nguy hiểm ngắn.
+                    <br>- <em>Khó AI:</em> Thuật toán tính toán điểm chuỗi công/thủ thông minh, cực kỳ thách thức!
+                </p>
+            </div>
+            <button id="btnGotIt" class="w-full mt-5 bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 rounded-xl transition">
+                Đã hiểu
+            </button>
+        </div>
+    </div>
+
+    <!-- Logic Game JS -->
+    <script>
+        /**
+         * GLOBAL GAME STATE
+         */
+        const state = {
+            boardSize: 15,          // 3 hoặc 15
+            winCondition: 5,        // 3 hoặc 5
+            mode: 'pve',            // 'pve' hoặc 'pvp'
+            difficulty: 'medium',   // 'easy', 'medium', 'hard'
+            board: [],              // Mảng 2 chiều chứa trạng thái ('X', 'O', '')
+            currentPlayer: 'X',     // 'X' luôn đi trước
+            isGameOver: false,
+            lastMove: null,         // {row, col}
+            winningCells: [],       // Mảng các tọa độ ô thắng
+            movesCount: 0,
+            timerSeconds: 0,
+            timerInterval: null,
+            soundEnabled: true,
+            scores: {
+                X: 0,
+                O: 0,
+                Draw: 0
+            }
+        };
+
+        // Web Audio API cho hiệu ứng âm thanh không phụ thuộc file ngoài
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playTone(freq, type = 'sine', duration = 0.1) {
+                if (!state.soundEnabled) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            }
+            playMoveX() { this.playTone(440, 'sine', 0.08); } // Nốt A4
+            playMoveO() { this.playTone(554.37, 'sine', 0.08); } // Nốt C#5
+            playWin() {
+                if (!state.soundEnabled) return;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => this.playTone(freq, 'triangle', 0.2), idx * 100);
+                });
+            }
+            playDraw() {
+                if (!state.soundEnabled) return;
+                this.playTone(200, 'sawtooth', 0.3);
+            }
+        }
+        const sounds = new SoundEffects();
+
+        // Elements
+        const boardEl = document.getElementById('board');
+        const statusText = document.getElementById('statusText');
+        const turnIndicator = document.getElementById('turnIndicator');
+        const moveCountEl = document.getElementById('moveCount');
+        const timerEl = document.getElementById('timer');
+        const scoreXEl = document.getElementById('scoreX');
+        const scoreOEl = document.getElementById('scoreO');
+        const scoreDrawEl = document.getElementById('scoreDraw');
+        const scoreOLabel = document.getElementById('scoreOLabel');
+        
+        // Modals
+        const resultModal = document.getElementById('resultModal');
+        const modalContent = document.getElementById('modalContent');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDesc = document.getElementById('modalDesc');
+        const modalIcon = document.getElementById('modalIcon');
+        const helpModal = document.getElementById('helpModal');
+
+        // Initial setup
+        window.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+            initGame();
+        });
+
+        function initGame() {
+            // Cấu hình điều kiện thắng dựa trên size
+            state.winCondition = state.boardSize === 3 ? 3 : 5;
+
+            // Khởi tạo mảng bàn cờ
+            state.board = Array(state.boardSize).fill(null).map(() => Array(state.boardSize).fill(''));
+            state.currentPlayer = 'X';
+            state.isGameOver = false;
+            state.lastMove = null;
+            state.winningCells = [];
+            state.movesCount = 0;
+
+            // Reset Timer
+            clearInterval(state.timerInterval);
+            state.timerSeconds = 0;
+            updateTimerDisplay();
+            state.timerInterval = setInterval(() => {
+                if (!state.isGameOver && state.movesCount > 0) {
+                    state.timerSeconds++;
+                    updateTimerDisplay();
+                }
+            }, 1000);
+
+            // Render giao diện
+            renderBoard();
+            updateUI();
+        }
+
+        function renderBoard() {
+            boardEl.innerHTML = '';
+            
+            // Kích thước ô tùy thuộc vào size bàn cờ
+            const cellSize = state.boardSize === 3 ? 'w-24 h-24 text-4xl sm:w-28 sm:h-28 sm:text-5xl' : 'w-7 h-7 text-sm sm:w-9 sm:h-9 sm:text-base';
+            
+            boardEl.style.gridTemplateColumns = `repeat(${state.boardSize}, minmax(0, 1fr))`;
+
+            for (let r = 0; r < state.boardSize; r++) {
+                for (let c = 0; c < state.boardSize; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${cellSize}`;
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function updateUI() {
+            moveCountEl.textContent = state.movesCount;
+            
+            // Cập nhật nhãn điểm
+            scoreOLabel.textContent = state.mode === 'pve' ? 'Bot O' : 'Người O';
+
+            if (!state.isGameOver) {
+                if (state.currentPlayer === 'X') {
+                    statusText.textContent = "Lượt của Người (X)";
+                    turnIndicator.textContent = 'X';
+                    turnIndicator.className = "w-10 h-10 rounded-xl flex items-center justify-center text-xl font-black bg-red-100 text-red-500 shadow-inner pop-in";
+                } else {
+                    statusText.textContent = state.mode === 'pve' ? "Bot (O) đang suy nghĩ..." : "Lượt của Người (O)";
+                    turnIndicator.textContent = 'O';
+                    turnIndicator.className = "w-10 h-10 rounded-xl flex items-center justify-center text-xl font-black bg-blue-100 text-blue-500 shadow-inner pop-in";
+                }
+            }
+
+            scoreXEl.textContent = state.scores.X;
+            scoreOEl.textContent = state.scores.O;
+            scoreDrawEl.textContent = state.scores.Draw;
+        }
+
+        function updateTimerDisplay() {
+            const mins = String(Math.floor(state.timerSeconds / 60)).padStart(2, '0');
+            const secs = String(state.timerSeconds % 60).padStart(2, '0');
+            timerEl.textContent = `${mins}:${secs}`;
+        }
+
+        /**
+         * XỬ LÝ NƯỚC ĐI
+         */
+        function handleCellClick(row, col) {
+            // Không cho đánh nếu đã kết thúc, ô đã đánh, hoặc lượt của Bot
+            if (state.isGameOver || state.board[row][col] !== '') return;
+            if (state.mode === 'pve' && state.currentPlayer === 'O') return;
+
+            makeMove(row, col);
+
+            // Nếu chế độ PVE và chưa kết thúc, cho Bot đánh
+            if (state.mode === 'pve' && !state.isGameOver && state.currentPlayer === 'O') {
+                setTimeout(() => {
+                    makeBotMove();
+                }, 300); // Trễ một chút cho tự nhiên
+            }
+        }
+
+        function makeMove(row, col) {
+            state.board[row][col] = state.currentPlayer;
+            state.lastMove = { row, col };
+            state.movesCount++;
+
+            // Âm thanh
+            if (state.currentPlayer === 'X') sounds.playMoveX();
+            else sounds.playMoveO();
+
+            // Cập nhật ô trên DOM
+            const cellIndex = row * state.boardSize + col;
+            const cellEl = boardEl.children[cellIndex];
+            cellEl.classList.add('occupied');
+            
+            // Xóa chỉ báo nước cuối cũ
+            document.querySelectorAll('.cell-last-move').forEach(el => el.classList.remove('cell-last-move'));
+            cellEl.classList.add('cell-last-move');
+
+            const symbolEl = document.createElement('span');
+            symbolEl.className = `pop-in ${state.currentPlayer === 'X' ? 'text-playerX' : 'text-playerO'}`;
+            symbolEl.textContent = state.currentPlayer;
+            cellEl.appendChild(symbolEl);
+
+            // Kiểm tra chiến thắng
+            const winResult = checkWin(row, col, state.currentPlayer);
+
+            if (winResult) {
+                state.isGameOver = true;
+                state.winningCells = winResult.cells;
+                highlightWinningCells();
+                state.scores[state.currentPlayer]++;
+                sounds.playWin();
+                showResultModal(state.currentPlayer);
+            } else if (checkDraw()) {
+                state.isGameOver = true;
+                state.scores.Draw++;
+                sounds.playDraw();
+                showResultModal('Draw');
+            } else {
+                // Đổi lượt
+                state.currentPlayer = state.currentPlayer === 'X' ? 'O' : 'X';
+            }
+
+            updateUI();
+        }
+
+        function highlightWinningCells() {
+            state.winningCells.forEach(({ row, col }) => {
+                const idx = row * state.boardSize + col;
+                if (boardEl.children[idx]) {
+                    boardEl.children[idx].classList.add('cell-winning');
+                }
+            });
+        }
+
+        /**
+         * THUẬT TOÁN KIỂM TRA THẮNG / HÒA
+         */
+        function checkWin(r, c, player) {
+            const directions = [
+                [[0, 1], [0, -1]],   // Ngang
+                [[1, 0], [-1, 0]],   // Dọc
+                [[1, 1], [-1, -1]],  // Chéo chính \
+                [[1, -2], [-1, 1]]   // Chéo phụ / (sửa lại thành 1,-1 & -1,1)
+            ];
+            
+            const dirs = [
+                [[0, 1], [0, -1]],
+                [[1, 0], [-1, 0]],
+                [[1, 1], [-1, -1]],
+                [[1, -1], [-1, 1]]
+            ];
+
+            for (let d = 0; d < dirs.length; d++) {
+                let count = 1;
+                let winningCells = [{ row: r, col: c }];
+
+                for (let i = 0; i < 2; i++) {
+                    const [dr, dc] = dirs[d][i];
+                    let nr = r + dr;
+                    let nc = c + dc;
+
+                    while (
+                        nr >= 0 && nr < state.boardSize &&
+                        nc >= 0 && nc < state.boardSize &&
+                        state.board[nr][nc] === player
+                    ) {
+                        count++;
+                        winningCells.push({ row: nr, col: nc });
+                        nr += dr;
+                        nc += dc;
+                    }
+                }
+
+                if (count >= state.winCondition) {
+                    return { winner: player, cells: winningCells };
+                }
+            }
+            return null;
+        }
+
+        function checkDraw() {
+            return state.movesCount >= state.boardSize * state.boardSize;
+        }
+
+        /**
+         * TRÍ TUỆ NHÂN TẠO (BOT AI)
+         */
+        function makeBotMove() {
+            if (state.isGameOver) return;
+
+            let bestMove = null;
+
+            if (state.difficulty === 'easy') {
+                bestMove = getRandomMove();
+            } else if (state.difficulty === 'medium') {
+                // Ưu tiên: Thắng ngay -> Chặn đối thủ thắng -> Đánh ngẫu nhiên gần tâm
+                bestMove = findWinningOrBlockingMove('O') || findWinningOrBlockingMove('X') || getSmartRandomMove();
+            } else if (state.difficulty === 'hard') {
+                // Thuật toán chấm điểm Heuristic đỉnh cao cho Gomoku & Tic Tac Toe
+                bestMove = getBestMoveAI();
+            }
+
+            if (bestMove) {
+                makeMove(bestMove.row, bestMove.col);
+            }
+        }
+
+        // Đánh ngẫu nhiên các ô trống
+        function getRandomMove() {
+            const emptyCells = [];
+            for (let r = 0; r < state.boardSize; r++) {
+                for (let c = 0; c < state.boardSize; c++) {
+                    if (state.board[r][c] === '') emptyCells.push({ row: r, col: c });
+                }
+            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        // Đánh thông minh xung quanh các ô đã có
+        function getSmartRandomMove() {
+            const candidates = getNeighborCells();
+            if (candidates.length > 0) {
+                return candidates[Math.floor(Math.random() * candidates.length)];
+            }
+            return getRandomMove();
+        }
+
+        // Tìm nước cờ kết thúc game hoặc chặn đối thủ thắng ngay
+        function findWinningOrBlockingMove(player) {
+            for (let r = 0; r < state.boardSize; r++) {
+                for (let c = 0; c < state.boardSize; c++) {
+                    if (state.board[r][c] === '') {
+                        state.board[r][c] = player;
+                        const isWin = checkWin(r, c, player);
+                        state.board[r][c] = '';
+                        if (isWin) return { row: r, col: c };
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Lấy danh sách các ô trống có hàng xóm (bán kính 1-2 ô)
+        function getNeighborCells(radius = 1) {
+            const neighbors = new Set();
+            const cells = [];
+
+            for (let r = 0; r < state.boardSize; r++) {
+                for (let c = 0; c < state.boardSize; c++) {
+                    if (state.board[r][c] !== '') {
+                        for (let dr = -radius; dr <= radius; dr++) {
+                            for (let dc = -radius; dc <= radius; dc++) {
+                                const nr = r + dr;
+                                const nc = c + dc;
+                                if (
+                                    nr >= 0 && nr < state.boardSize &&
+                                    nc >= 0 && nc < state.boardSize &&
+                                    state.board[nr][nc] === ''
+                                ) {
+                                    const key = `${nr},${nc}`;
+                                    if (!neighbors.has(key)) {
+                                        neighbors.add(key);
+                                        cells.push({ row: nr, col: nc });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Nếu bàn cờ còn trống hoàn toàn, đánh ở chính giữa
+            if (cells.length === 0) {
+                const center = Math.floor(state.boardSize / 2);
+                return [{ row: center, col: center }];
+            }
+
+            return cells;
+        }
+
+        // Thuật toán chấm điểm vị trí Heuristic nâng cao
+        function getBestMoveAI() {
+            // Nước đi đầu tiên nếu Bot đi trước
+            if (state.movesCount === 0) {
+                const center = Math.floor(state.boardSize / 2);
+                return { row: center, col: center };
+            }
+
+            // 1. Kiểm tra nếu O thắng ngay -> Đánh luôn
+            const winMove = findWinningOrBlockingMove('O');
+            if (winMove) return winMove;
+
+            // 2. Kiểm tra nếu X chuẩn bị thắng -> Chặn ngay
+            const blockMove = findWinningOrBlockingMove('X');
+            if (blockMove) return blockMove;
+
+            // 3. Chấm điểm các ô tiềm năng
+            const candidates = getNeighborCells(state.boardSize === 3 ? 1 : 2);
+            let maxScore = -Infinity;
+            let bestMoves = [];
+
+            candidates.forEach(pos => {
+                const score = evaluatePosition(pos.row, pos.col);
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestMoves = [pos];
+                } else if (score === maxScore) {
+                    bestMoves.push(pos);
+                }
+            });
+
+            return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+        }
+
+        function evaluatePosition(r, c) {
+            // Điểm tấn công của Bot (O) + Điểm phòng thủ chống Người (X)
+            const attackScore = getPointForPlayer(r, c, 'O');
+            const defenseScore = getPointForPlayer(r, c, 'X');
+            
+            // Ưu tiên công hơn thủ nhẹ một chút
+            return attackScore * 1.2 + defenseScore;
+        }
+
+        function getPointForPlayer(r, c, player) {
+            const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            let totalScore = 0;
+
+            dirs.forEach(([dr, dc]) => {
+                let count = 1;
+                let openEnds = 0;
+
+                // Chiều thuận
+                let nr = r + dr;
+                let nc = c + dc;
+                while (nr >= 0 && nr < state.boardSize && nc >= 0 && nc < state.boardSize && state.board[nr][nc] === player) {
+                    count++;
+                    nr += dr;
+                    nc += dc;
+                }
+                if (nr >= 0 && nr < state.boardSize && nc >= 0 && nc < state.boardSize && state.board[nr][nc] === '') {
+                    openEnds++;
+                }
+
+                // Chiều nghịch
+                nr = r - dr;
+                nc = c - dc;
+                while (nr >= 0 && nr < state.boardSize && nc >= 0 && nc < state.boardSize && state.board[nr][nc] === player) {
+                    count++;
+                    nr -= dr;
+                    nc -= dc;
+                }
+                if (nr >= 0 && nr < state.boardSize && nc >= 0 && nc < state.boardSize && state.board[nr][nc] === '') {
+                    openEnds++;
+                }
+
+                // Tính điểm dựa trên số quân tạo thành & số đầu thoáng
+                totalScore += calculatePatternScore(count, openEnds);
+            });
+
+            return totalScore;
+        }
+
+        function calculatePatternScore(count, openEnds) {
+            if (state.winCondition === 3) {
+                // Bàn cờ 3x3
+                if (count >= 3) return 10000;
+                if (count === 2 && openEnds === 2) return 500;
+                if (count === 2 && openEnds === 1) return 100;
+                if (count === 1) return 10;
+                return 0;
+            } else {
+                // Bàn cờ 15x15 Gomoku
+                if (count >= 5) return 100000;
+                if (count === 4 && openEnds === 2) return 10000;
+                if (count === 4 && openEnds === 1) return 1000;
+                if (count === 3 && openEnds === 2) return 1000;
+                if (count === 3 && openEnds === 1) return 100;
+                if (count === 2 && openEnds === 2) return 100;
+                if (count === 2 && openEnds === 1) return 10;
+                return 1;
+            }
+        }
+
+        /**
+         * HIỂN THỊ KẾT QUẢ & HIỆU ỨNG
+         */
+        function showResultModal(winner) {
+            setTimeout(() => {
+                resultModal.classList.remove('opacity-0', 'pointer-events-none');
+                modalContent.classList.remove('scale-90');
+                modalContent.classList.add('scale-100');
+
+                if (winner === 'Draw') {
+                    modalIcon.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-slate-100 text-slate-500";
+                    modalIcon.innerHTML = `<i class="fa-solid fa-handshake"></i>`;
+                    modalTitle.textContent = "Hòa Nhoài!";
+                    modalDesc.textContent = "Trận đấu diễn ra vô cùng gay cấn nhưng không ai giành chiến thắng.";
+                } else {
+                    const isUserWin = winner === 'X';
+                    modalIcon.className = `w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 ${isUserWin ? 'bg-red-100 text-red-500' : 'bg-blue-100 text-blue-500'}`;
+                    modalIcon.innerHTML = `<i class="fa-solid ${isUserWin ? 'fa-trophy' : 'fa-robot'}"></i>`;
+                    
+                    if (state.mode === 'pve') {
+                        modalTitle.textContent = isUserWin ? "Bạn Đã Thắng!" : "Bot AI Thắng!";
+                        modalDesc.textContent = isUserWin ? "Chúc mừng! Bạn đã xuất sắc đánh bại Bot AI." : "Bot AI đã giành chiến thắng lần này. Hãy thử lại xem!";
+                    } else {
+                        modalTitle.textContent = `Người Chơi ${winner} Thắng!`;
+                        modalDesc.textContent = `Xin chúc mừng người chơi đại diện cho quân ${winner}.`;
+                    }
+
+                    // Bắn pháo hoa rực rỡ
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }
+            }, 400);
+        }
+
+        function closeModal() {
+            resultModal.classList.add('opacity-0', 'pointer-events-none');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-90');
+        }
+
+        /**
+         * GẮN SỰ KIỆN LẮNG NGHE (EVENT LISTENERS)
+         */
+        function setupEventListeners() {
+            // Nút Ván mới
+            document.getElementById('btnNewGame').addEventListener('click', () => {
+                initGame();
+            });
+
+            // Chọn kích thước bàn cờ
+            document.querySelectorAll('.btn-board-size').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.btn-board-size').forEach(b => {
+                        b.classList.remove('active', 'bg-sky-50', 'border-sky-500', 'text-sky-700');
+                        b.classList.add('bg-slate-50', 'border-transparent', 'text-slate-700');
+                    });
+                    const target = e.currentTarget;
+                    target.classList.add('active', 'bg-sky-50', 'border-sky-500', 'text-sky-700');
+                    target.classList.remove('bg-slate-50', 'border-transparent', 'text-slate-700');
+
+                    state.boardSize = parseInt(target.dataset.size);
+                    initGame();
+                });
+            });
+
+            // Chọn Chế độ chơi (PVE / PVP)
+            const modeSelect = document.getElementById('modeSelect');
+            const diffGroup = document.getElementById('difficultyGroup');
+            modeSelect.addEventListener('change', (e) => {
+                state.mode = e.target.value;
+                if (state.mode === 'pvp') {
+                    diffGroup.classList.add('hidden');
+                } else {
+                    diffGroup.classList.remove('hidden');
+                }
+                initGame();
+            });
+
+            // Chọn Độ khó Bot
+            document.querySelectorAll('.btn-diff').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.btn-diff').forEach(b => {
+                        b.classList.remove('active', 'bg-sky-500', 'border-sky-500', 'text-white');
+                        b.classList.add('bg-slate-100', 'text-slate-600');
+                    });
+                    const target = e.currentTarget;
+                    target.classList.add('active', 'bg-sky-500', 'border-sky-500', 'text-white');
+                    target.classList.remove('bg-slate-100', 'text-slate-600');
+
+                    state.difficulty = target.dataset.diff;
+                    initGame();
+                });
+            });
+
+            // Đặt lại điểm số
+            document.getElementById('btnResetScore').addEventListener('click', () => {
+                state.scores = { X: 0, O: 0, Draw: 0 };
+                updateUI();
+            });
+
+            // Nút Bật/Tắt âm thanh
+            const btnSound = document.getElementById('btnSound');
+            const soundIcon = document.getElementById('soundIcon');
+            btnSound.addEventListener('click', () => {
+                state.soundEnabled = !state.soundEnabled;
+                if (state.soundEnabled) {
+                    soundIcon.className = "fa-solid fa-volume-high text-lg text-sky-600";
+                } else {
+                    soundIcon.className = "fa-solid fa-volume-xmark text-lg text-slate-400";
+                }
+            });
+
+            // Modals
+            document.getElementById('btnModalClose').addEventListener('click', closeModal);
+            document.getElementById('btnModalReplay').addEventListener('click', () => {
+                closeModal();
+                initGame();
+            });
+
+            // Help Modal
+            const btnHelp = document.getElementById('btnHelp');
+            const btnCloseHelp = document.getElementById('btnCloseHelp');
+            const btnGotIt = document.getElementById('btnGotIt');
+
+            btnHelp.addEventListener('click', () => {
+                helpModal.classList.remove('opacity-0', 'pointer-events-none');
+            });
+
+            const hideHelp = () => {
+                helpModal.classList.add('opacity-0', 'pointer-events-none');
+            };
+
+            btnCloseHelp.addEventListener('click', hideHelp);
+            btnGotIt.addEventListener('click', hideHelp);
+        }
+    </script>
+</body>
+</html>
